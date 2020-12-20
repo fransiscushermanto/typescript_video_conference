@@ -1,17 +1,26 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+import * as React from "react";
+import ReactDOM from "react-dom";
+import { BrowserRouter } from "react-router-dom";
 
+import App from "./App";
+import { RoomProvider } from "./components/Providers/RoomProvider";
+import { MessageProvider } from "./components/Providers/MessageProvider";
+
+import "./sass/style.scss";
+import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
+import { FirebaseProvider } from "./components/Providers/FirebaseProvider";
+import { AuthProvider } from "./components/Providers/AuthProvider";
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+  <BrowserRouter>
+    <FirebaseProvider>
+      <RoomProvider>
+        <AuthProvider>
+          <MessageProvider>
+            <App />
+          </MessageProvider>
+        </AuthProvider>
+      </RoomProvider>
+    </FirebaseProvider>
+  </BrowserRouter>,
+  document.getElementById("root"),
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
