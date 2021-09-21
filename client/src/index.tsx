@@ -10,17 +10,22 @@ import "./sass/style.scss";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import { FirebaseProvider } from "./components/Providers/FirebaseProvider";
 import { AuthProvider } from "./components/Providers/AuthProvider";
+import { QueryClient, QueryClientProvider } from "react-query";
+const queryClient = new QueryClient();
+
 ReactDOM.render(
   <BrowserRouter>
-    <FirebaseProvider>
-      <RoomProvider>
-        <AuthProvider>
-          <MessageProvider>
-            <App />
-          </MessageProvider>
-        </AuthProvider>
-      </RoomProvider>
-    </FirebaseProvider>
+    <QueryClientProvider client={queryClient}>
+      <FirebaseProvider>
+        <RoomProvider>
+          <AuthProvider>
+            <MessageProvider>
+              <App />
+            </MessageProvider>
+          </AuthProvider>
+        </RoomProvider>
+      </FirebaseProvider>
+    </QueryClientProvider>
   </BrowserRouter>,
   document.getElementById("root"),
 );

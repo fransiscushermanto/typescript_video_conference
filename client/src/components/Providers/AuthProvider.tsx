@@ -1,8 +1,8 @@
-import { User } from "@firebase/auth";
 import React, { useEffect, useState } from "react";
 import { useFirebase, useRoom } from "../../hooks";
 import { useHistory } from "react-router-dom";
 import Cookies from "js-cookie";
+import { QueryClient } from "react-query";
 
 interface Props {
   children: React.ReactNode;
@@ -21,6 +21,7 @@ const AuthContext = React.createContext<IAuthContext>({
 });
 
 const AuthProvider: React.FC<Props> = ({ children }) => {
+  const queryClient = new QueryClient();
   const firebase = useFirebase();
   const history = useHistory();
   const { meState } = useRoom();
@@ -33,6 +34,8 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
   function logout() {
     setIsLoggedIn(false);
     firebase.logout();
+    queryClient.removeQueries("rooms");
+    queryClient.invalidateQueries("rooms");
     history.push("/login");
   }
 

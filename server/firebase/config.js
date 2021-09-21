@@ -62,6 +62,34 @@ class FirebaseAdmin {
 
     return room;
   }
+
+  /**
+   *
+   * @param {string} user_id
+   */
+  async getRooms(user_id) {
+    if (user_id) {
+      const id_rooms = await this.firestore
+        .collection(collections.user_rooms)
+        .doc(user_id)
+        .get()
+        .then((res) => (res.data() ? res.data().rooms : []));
+
+      if (id_rooms.length > 0) {
+        const rooms = id_rooms.map(
+          async (id_room) =>
+            await this.firestore
+              .collection(collections.rooms)
+              .doc(id_room)
+              .get()
+              .then((res) => res.data()),
+        );
+        return await Promise.all(rooms);
+      }
+    }
+
+    return [];
+  }
 }
 
 module.exports.FirebaseAdmin = FirebaseAdmin;

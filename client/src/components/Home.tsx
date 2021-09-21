@@ -75,10 +75,17 @@ const Home: React.FC<Props> = ({ history }) => {
             room_name: formData.room_name,
             user_id: me.user_id,
           });
-
-          // if (res.data.success) {
-          //   history.push(`/start/${res.data.newRoom.room_id}`);
-          // }
+          if (res.data.success) {
+            setMessages([
+              ...messages,
+              {
+                id: Date.now(),
+                message: res.data.message,
+                severity: Severities.SUCCESS,
+              },
+            ]);
+            setCurrentPage(HomePages.DEFAULT);
+          }
         } catch (error) {
           const { message } = error.response.data;
           setMessages([
@@ -131,10 +138,6 @@ const Home: React.FC<Props> = ({ history }) => {
   useEffect(() => {
     sessionStorage.clear();
   }, []);
-
-  useEffect(() => {
-    console.log(me);
-  }, [me]);
 
   return (
     <>

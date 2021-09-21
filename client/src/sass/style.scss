@@ -41,7 +41,7 @@ body,
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      > div {
+      > .form-wrapper {
         display: block;
         width: 450px;
         height: 300px;
@@ -55,7 +55,9 @@ body,
           padding: 0px 30px;
           .btn {
             background-color: white;
-            margin-bottom: 10px;
+            &:not(:last-child) {
+              margin-bottom: 10px;
+            }
             font-weight: bold;
             transition: all ease-in 0.3s;
             &:hover {

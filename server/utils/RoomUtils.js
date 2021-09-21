@@ -11,6 +11,32 @@ const ParticipantType = {
 };
 
 /**
+ * @param {Object} {room_host, room_name}
+ */
+const createRoom = async ({ room_host, room_name }) => {
+  let newRoom, room_id, room_password;
+  try {
+    do {
+      room_id = generate(10);
+      room_password = generate(10);
+    } while (existRoom(room_id));
+
+    newRoom = { room_id, room_host, room_password, room_name };
+    await admin.createRoom(newRoom);
+    return { success: true, message: "Success created room" };
+  } catch (error) {
+    return { success: false, message: "There is an error occurred" };
+  }
+};
+/**
+ *
+ * @param {string} user_id
+ * @returns {Array} rooms
+ */
+const getRooms = async (user_id) => {
+  return await admin.getRooms(user_id);
+};
+/**
  * @param {string} room_id
  * @param {string} room_password
  */
@@ -165,24 +191,6 @@ const existRoom = (room_id) => {
   }
 };
 /**
- * @param {string} room_host
- */
-const createRoom = async ({ room_host, room_name }) => {
-  let newRoom, room_id, room_password;
-  try {
-    do {
-      room_id = generate(10);
-      room_password = generate(10);
-    } while (existRoom(room_id));
-
-    newRoom = { room_id, room_host, room_password, room_name };
-    await admin.createRoom(newRoom);
-    return { success: true, message: "Success created room" };
-  } catch (error) {
-    return { success: false, message: "There is an error occurred" };
-  }
-};
-/**
  *
  * @param {Object} {room_id, room_host, room_password}
  * @returns {room_id, room_host, room_password}
@@ -194,13 +202,6 @@ const updateRoom = ({ room_id, room_host, room_password }) => {
   temp[indexTargetRoom] = { room_id, room_host, room_password };
   rooms = temp;
   return { room_id, room_host, room_password };
-};
-/**
- *
- * @returns {Array} rooms
- */
-const getRooms = () => {
-  return rooms;
 };
 /**
  * @param {object} newRoom

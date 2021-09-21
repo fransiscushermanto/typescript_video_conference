@@ -4,11 +4,11 @@ const RoomController = require("../controller/RoomController");
 
 router.route("/createRoom").post(RoomController.createRoom);
 router.route("/joinRoom").post(RoomController.joinRoom);
-router.route("/getListRooms").get(RoomController.getListRooms);
+router.route("/getRooms").get(RoomController.getRooms);
 router.route("/checkRoom").post(RoomController.checkRoom);
 router.route("/isHost").post(RoomController.isHost);
 router.route("/getRoomParticipants").get(RoomController.getRoomParticipants);
-router.route("/getListParticipants").get(RoomController.getListParticipants);
+router.route("/getParticipants").get(RoomController.getParticipants);
 router.route("/getRoomDetails").get(RoomController.getRoomDetails);
 router.route("/updateRoom").post(RoomController.updateRoom);
 router.route("/flushRoom").get(RoomController.flushRoom);
