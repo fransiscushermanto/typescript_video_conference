@@ -31,12 +31,16 @@ class FirebaseAdmin {
     return decodedToken;
   }
 
+  async getUser(user_id) {
+    return await this.auth.getUser(user_id);
+  }
+
   /**
    *
    * @param {object} {room_id, room_host, room_password, room_name} payload
    */
   async createRoom(payload) {
-    const existingRoom = await this.firestore
+    const existingUserRoom = await this.firestore
       .collection(collections.user_rooms)
       .doc(payload.room_host)
       .get();
@@ -46,7 +50,7 @@ class FirebaseAdmin {
       .doc(payload.room_id)
       .set(payload);
 
-    if (!existingRoom.data()) {
+    if (!existingUserRoom.data() || !Array.isArray(existingUserRoom.data())) {
       await this.firestore
         .collection(collections.user_rooms)
         .doc(payload.room_host)
@@ -56,7 +60,7 @@ class FirebaseAdmin {
         .collection(collections.user_rooms)
         .doc(payload.room_host)
         .update({
-          rooms: [...existingRoom.data().rooms, payload.room_id],
+          rooms: [...existingUserRoom.data().rooms, payload.room_id],
         });
     }
 
@@ -73,7 +77,9 @@ class FirebaseAdmin {
         .collection(collections.user_rooms)
         .doc(user_id)
         .get()
-        .then((res) => (res.data() ? res.data().rooms : []));
+        .then((res) => {
+          return res.data() ? res.data().rooms : [];
+        });
 
       if (id_rooms.length > 0) {
         const rooms = id_rooms.map(
@@ -89,6 +95,48 @@ class FirebaseAdmin {
     }
 
     return [];
+  }
+
+  async getRoomParticipants(user_id, room_id) {
+    if (user_id && room_id) {
+      const room_data = await this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .get();
+
+      const participants = room_data
+        .data()
+        .room_participants.map(async (participant) => {
+          const user_data = await this.getUser(participant.user_id);
+          return {
+            ...participant,
+            user_name: user_data.displayName,
+          };
+        });
+
+      return await Promise.all(participants);
+    }
+
+    return [];
+  }
+
+  /**
+   *
+   * @param {string} user_id
+   * @param {string} room_id
+   * @returns true | false
+   */
+  async checkRoom(user_id, room_id) {
+    if (user_id && room_id) {
+      const id_rooms = await this.firestore
+        .collection(collections.user_rooms)
+        .doc(user_id)
+        .get()
+        .then((res) => (res.data() ? res.data().rooms : []));
+      return id_rooms.some((room) => room === room_id);
+    }
+
+    return false;
   }
 }
 

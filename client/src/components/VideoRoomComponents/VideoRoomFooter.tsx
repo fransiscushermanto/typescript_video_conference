@@ -6,7 +6,7 @@ import NoMicrophoneSVG from "../../assets/no-microphone.svg";
 import { MessageContext } from "../Providers/MessageProvider";
 import { Severities } from "../CustomSnackbar";
 
-const RoomFooter = () => {
+const VideoRoomFooter = () => {
   const [messages, setMessages] = React.useContext(MessageContext);
   // const [permission, setPermission] = roomPermission;
 
@@ -81,4 +81,4 @@ const RoomFooter = () => {
   );
 };
 
-export default RoomFooter;
+export default VideoRoomFooter;

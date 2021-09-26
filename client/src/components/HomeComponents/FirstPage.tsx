@@ -1,7 +1,7 @@
 import { css } from "@emotion/css";
 import React, { useEffect } from "react";
 import { QueryClient } from "react-query";
-import { useRoom } from "../../hooks";
+import { useMe, useRoom } from "../../hooks";
 import { useGetRooms } from "../api-hooks";
 import { RoomCard } from "./firstPageComp";
 
@@ -40,10 +40,8 @@ const styled = {
 function FirstPage(props: Props) {
   const queryClient = new QueryClient();
   const { setCurrentPage } = props;
+  const [me] = useMe();
 
-  const {
-    meState: [me],
-  } = useRoom();
   const {
     data: rooms,
     isLoading,

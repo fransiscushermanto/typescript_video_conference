@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import VideoHandler from "../Handlers/VideoHandler";
 import { Info } from "../Shapes";
 import { css } from "@emotion/css";
-import RoomInfo from "./RoomInfo";
+import RoomInfo from "./VideoRoomInfo";
 import { detectOnBlur } from "../helper";
 
 interface Props {
@@ -45,7 +45,7 @@ const styled = {
   `,
 };
 
-const RoomMain: React.FC<Props> = ({ peer, status, inRoomDetails: room }) => {
+const VidoRoomMain: React.FC<Props> = ({ peer, status, inRoomDetails: room }) => {
   const [openRoomInfo, setOpenRoomInfo] = useState(false);
   const videoWrapperRef = useRef(null);
   const roomIconRef = useRef(null);
@@ -112,4 +112,4 @@ const RoomMain: React.FC<Props> = ({ peer, status, inRoomDetails: room }) => {
   );
 };
 
-export default RoomMain;
+export default VidoRoomMain;

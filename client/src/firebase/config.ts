@@ -48,12 +48,6 @@ class Firebase {
     }
   }
 
-  // async store(collections, payload) {
-  //   try {
-  //     const res =
-  //   }
-  // }
-
   logout() {
     Cookies.remove("Authorization");
     return this.auth.signOut();

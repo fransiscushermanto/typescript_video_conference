@@ -29,21 +29,36 @@ module.exports = {
       rooms: await utils.getRooms(user_id),
     });
   },
-  getParticipants: (req, res, next) => {
-    return res.status(200).send({
-      success: true,
-      participants: utils.getParticipants(),
-    });
+  getRoomParticipants: async (req, res, next) => {
+    const { user_id, room_id } = req.query;
+    if (utils.checkRoom(user_id, room_id)) {
+      return res.status(200).send({
+        participants: await utils.getRoomParticipants(user_id, room_id),
+      });
+    } else {
+      return res.status(200).send([]);
+    }
   },
-  checkRoom: (req, res, next) => {
-    const { room_id } = req.body;
-    if (!utils.existRoom(room_id)) {
+  checkRoom: async (req, res, next) => {
+    const { user_id, room_id } = req.body;
+    if (!user_id)
+      return res.status(401).send({
+        success: false,
+        message: "Unauthenticated",
+      });
+    if (!(await utils.checkRoom(user_id, room_id))) {
       return res.status(400).send({
         success: false,
         message: "Room doesn't exist",
       });
     }
     return res.status(200).send({ success: true });
+  },
+  getParticipants: (req, res, next) => {
+    return res.status(200).send({
+      success: true,
+      participants: utils.getParticipants(),
+    });
   },
   isHost: (req, res, next) => {
     const { user_id, room_id } = req.body;
@@ -68,20 +83,10 @@ module.exports = {
     }
     return res.status(200).send({ success: true, user_id: userId });
   },
-  getRoomParticipants: (req, res, next) => {
-    const { room_id } = req.query;
-    if (utils.existRoom(room_id)) {
-      return res.status(200).send({
-        participants: utils.getRoomParticipants(room_id),
-        hosts: utils.getRoomHosts(room_id),
-      });
-    } else {
-      return res.status(200).send([]);
-    }
-  },
+
   getRoomDetails: (req, res, next) => {
     const { room_id } = req.query;
-    if (utils.existRoom(room_id)) {
+    if (utils.existMeetingRoom(room_id)) {
       return res.status(200).send(utils.getRoomDetails(room_id));
     }
 
@@ -90,7 +95,7 @@ module.exports = {
   updateRoom: (req, res, next) => {
     const { room_id, room_host, room_password } = req.body;
     try {
-      if (utils.existRoom(room_id)) {
+      if (utils.existMeetingRoom(room_id)) {
         const result = utils.updateRoom({
           room_id,
           room_host,

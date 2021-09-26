@@ -1,5 +1,6 @@
 import { css } from "@emotion/css";
 import React from "react";
+import { useHistory } from "react-router";
 
 interface IRoomCard {
   room: {
@@ -39,12 +40,14 @@ const styled = {
     .name {
       font-size: 2.125rem;
       font-weight: 600;
+      text-align: center;
     }
   `,
 };
 
 function RoomCard({ room }: IRoomCard) {
-  const { room_name } = room;
+  const { room_name, room_id } = room;
+  const history = useHistory();
 
   function getInitialRoomName() {
     const arrStr = String(room_name).split(" ");
@@ -65,7 +68,10 @@ function RoomCard({ room }: IRoomCard) {
   }
 
   return (
-    <div className={styled.card}>
+    <div
+      onClick={() => history.push(`/room/${room_id}`)}
+      className={styled.card}
+    >
       <div style={{ backgroundColor: getRandomColor() }} className="initial">
         <span>{getInitialRoomName()}</span>
       </div>

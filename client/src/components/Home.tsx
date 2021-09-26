@@ -10,7 +10,7 @@ import LogOutSVG from "../assets/logout.svg";
 import * as yup from "yup";
 import { RouteComponentProps } from "react-router-dom";
 import * as H from "history";
-import { useAuth, useFirebase, useRoom } from "../hooks";
+import { useAuth, useFirebase, useMe, useRoom } from "../hooks";
 import { css } from "@emotion/css";
 import { MessageContext } from "./Providers/MessageProvider";
 import { Severities } from "./CustomSnackbar";
@@ -45,9 +45,8 @@ const Home: React.FC<Props> = ({ history }) => {
   });
 
   const { logout } = useAuth();
-  const { meState } = useRoom();
 
-  const [me] = meState;
+  const [me] = useMe();
   const [messages, setMessages] = useContext(MessageContext);
   const [currentPage, setCurrentPage] = useState<HomePages>(HomePages.DEFAULT);
 

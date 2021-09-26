@@ -8,8 +8,9 @@ import RoomGuard from "./components/HOC/RoomGuard";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import NotFound from "./components/NotFound";
-import Room from "./components/RoomComponents/Room";
+import VideoRoom from "./components/VideoRoomComponents/VideoRoom";
 import AuthGuard from "./components/HOC/AuthGuard";
+import Room from "./components/RoomComponents/Room";
 
 const App = (props) => {
   return (
@@ -20,8 +21,9 @@ const App = (props) => {
       <Switch>
         <Route path="/login" component={AuthGuard(Login)} />
         <Route path="/" exact component={AuthGuard(Home)} />
-        <Route path="/start/:room_id" component={RoomGuard(Room)} />
-        <Route path="/join/:room_id" component={RoomGuard(Room)} />
+        <Route path="/room/:room_id" component={RoomGuard(Room)} />
+        <Route path="/start/:meeting_id" component={RoomGuard(VideoRoom)} />
+        <Route path="/join/:meeting_id" component={RoomGuard(VideoRoom)} />
         <Route path="*" component={NotFound} />
       </Switch>
     </SocketProvider>

@@ -19,15 +19,28 @@ const createRoom = async ({ room_host, room_name }) => {
     do {
       room_id = generate(10);
       room_password = generate(10);
-    } while (existRoom(room_id));
+    } while (existMeetingRoom(room_id));
 
-    newRoom = { room_id, room_host, room_password, room_name };
+    newRoom = {
+      room_id,
+      room_host,
+      room_password,
+      room_name,
+      room_participants: [
+        {
+          user_id: room_host,
+          status: ParticipantType.HOST,
+          allowed: true,
+        },
+      ],
+    };
     await admin.createRoom(newRoom);
     return { success: true, message: "Success created room" };
   } catch (error) {
     return { success: false, message: "There is an error occurred" };
   }
 };
+
 /**
  *
  * @param {string} user_id
@@ -36,12 +49,27 @@ const createRoom = async ({ room_host, room_name }) => {
 const getRooms = async (user_id) => {
   return await admin.getRooms(user_id);
 };
+
+/**
+ *
+ * @param {string} user_id
+ * @param {string} room_id
+ * @returns true | false
+ */
+const checkRoom = async (user_id, room_id) => {
+  return await admin.checkRoom(user_id, room_id);
+};
+
+const getRoomParticipants = async (user_id, room_id) => {
+  return await admin.getRoomParticipants(user_id, room_id);
+};
+
 /**
  * @param {string} room_id
  * @param {string} room_password
  */
 const validateRoomJoining = (room_id, room_password) => {
-  if (existRoom(room_id)) {
+  if (existMeetingRoom(room_id)) {
     if (checkPassword(room_id, room_password)) {
       return true;
     } else {
@@ -131,7 +159,7 @@ const checkPassword = (room_id, room_password) => {
 /**
  * @param {string} room_id
  */
-const getRoomParticipants = (room_id) => {
+const getMeetingParticipants = (room_id) => {
   return participants.filter((participant) => participant.room_id === room_id);
 };
 /**
@@ -183,7 +211,7 @@ const existUser = (user_id) => {
 /**
  * @param {string} room_id
  */
-const existRoom = (room_id) => {
+const existMeetingRoom = (room_id) => {
   if (rooms.filter((room) => room.room_id === room_id).length === 1) {
     return true;
   } else {
@@ -274,7 +302,7 @@ const removeUserFromRoom = (user_id) => {
  * @param {string} room_id
  */
 const getRoomHosts = (room_id) => {
-  let roomParticipants = getRoomParticipants(room_id);
+  let roomParticipants = getMeetingParticipants(room_id);
   let filtered = roomParticipants.filter(
     (participant) =>
       participant.status === ParticipantType.HOST ||
@@ -287,7 +315,7 @@ const getRoomHosts = (room_id) => {
  * @param {string} room_id
  */
 const getRoomHost = (room_id) => {
-  let roomParticipants = getRoomParticipants(room_id);
+  let roomParticipants = getMeetingParticipants(room_id);
   return roomParticipants.filter(
     (participant) => participant.status === ParticipantType.HOST,
   )[0];
@@ -322,10 +350,12 @@ const getUserData = (user_id) => {
 module.exports = {
   setRooms,
   getRooms,
-  createRoom,
-  existRoom,
-  existUser,
   getRoomParticipants,
+  createRoom,
+  checkRoom,
+  existMeetingRoom,
+  existUser,
+  getMeetingParticipants,
   checkPassword,
   generate,
   getSpecificParticipantInRoom,

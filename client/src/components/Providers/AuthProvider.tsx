@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useFirebase, useRoom } from "../../hooks";
+import { useFirebase, useMe, useRoom } from "../../hooks";
 import { useHistory } from "react-router-dom";
 import Cookies from "js-cookie";
 import { QueryClient } from "react-query";
@@ -24,9 +24,8 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
   const queryClient = new QueryClient();
   const firebase = useFirebase();
   const history = useHistory();
-  const { meState } = useRoom();
 
-  const [me, setMe] = meState;
+  const [me, setMe] = useMe();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(
     !!Cookies.get("Authorization"),
   );
@@ -57,6 +56,8 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
           user_name: user.displayName,
         });
         setIsLoggedIn(true);
+      } else {
+        history.push("/");
       }
     });
   }, []);
