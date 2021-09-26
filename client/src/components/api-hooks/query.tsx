@@ -1,11 +1,6 @@
 import { useQuery, UseQueryOptions } from "react-query";
 import axios from "../../axios-instance";
-
-enum ParticipantType {
-  HOST = "host",
-  CO_HOST = "co-host",
-  PARTICIPANT = "participant",
-}
+import { ParticipantType, RoomStatus } from "./type";
 
 interface Participants {
   user_id: string;
@@ -21,6 +16,7 @@ export function useGetRooms(
       room_id: string;
       room_name: string;
       room_password: string;
+      status: RoomStatus;
     }[],
     any
   > = {},
@@ -31,6 +27,7 @@ export function useGetRooms(
       room_id: string;
       room_name: string;
       room_password: string;
+      status: RoomStatus;
     }[],
     any
   >(

@@ -2,6 +2,8 @@ import React, { useContext } from "react";
 import { MessageContext } from "../Providers/MessageProvider";
 import { Severities } from "../CustomSnackbar";
 import axios from "../../axios-instance";
+import { useCheckRoom } from "../api-hooks";
+import { useMe } from "../../hooks";
 
 interface Props {
   setCurrentPage: React.Dispatch<React.SetStateAction<string>>;
@@ -18,54 +20,42 @@ const JoinPage: React.FC<Props> = ({
   onSubmit,
   errors,
 }) => {
+  const [me] = useMe();
   const [messages, setMessages] = useContext(MessageContext);
 
-  const checkRoom = async (formData: { room_id: string; name: string }) => {
-    try {
-      const res = await axios.post("/api/checkRoom", {
-        room_id: formData.room_id,
-      });
-      if (res.data.success) {
-        var password = prompt("Please enter room password");
-        if (password !== null) {
-          formData["room_password"] = password;
-          const res = await axios.post("/api/joinRoom", {
-            room_id: formData.room_id,
-            room_password: password,
-            name: formData.name,
-          });
-          formData["user_id"] = res.data.user_id;
-          if (res.data.success) {
-            onSubmit(formData);
-          }
-        }
-      }
-    } catch (error) {
+  const { mutateAsync } = useCheckRoom({
+    onError: ({ response: { data } }) => {
       setMessages([
         ...messages,
         {
           id: Date.now(),
-          message: error.response.data.message,
+          message: data.message,
           severity: Severities.ERROR,
         },
       ]);
+    },
+  });
+
+  const checkRoom = async (formData: { room_id: string; name: string }) => {
+    const res = await mutateAsync({ room_id: formData.room_id });
+    if (res.success) {
+      var password = prompt("Please enter room password");
+      if (password !== null) {
+        const res = await axios.post("/api/joinRoom", {
+          room_id: formData.room_id,
+          room_password: password,
+          user_id: me.user_id,
+        });
+        // if (res.data.success) {
+        //   onSubmit(formData);
+        // }
+      }
     }
   };
 
   return (
     <div className="form-wrapper join">
       <form className="form" onSubmit={handleSubmit(checkRoom)}>
-        <div className="form-group">
-          <label>Name</label>
-          <input
-            autoComplete="off"
-            ref={register}
-            className="form-control"
-            type="text"
-            name="name"
-          />
-          <span className="error">{errors?.name?.message}</span>
-        </div>
         <div className="form-group">
           <label>Room ID</label>
           <input

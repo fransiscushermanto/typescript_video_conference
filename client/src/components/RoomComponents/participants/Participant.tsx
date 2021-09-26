@@ -1,4 +1,3 @@
-import React, { useEffect } from "react";
 import { useParams } from "react-router";
 import { useMe } from "../../../hooks";
 import { useGetRoomParticipants } from "../../api-hooks";
@@ -15,8 +14,6 @@ function Participant() {
       enabled: !!(me && me.user_id),
     },
   );
-
-  // useEffect(() => {}, [])
 
   return (
     <div style={{ color: "white" }}>

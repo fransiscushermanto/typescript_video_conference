@@ -1,6 +1,7 @@
-import { css } from "@emotion/css";
+import { css, cx } from "@emotion/css";
 import React from "react";
 import { useHistory } from "react-router";
+import { RoomStatus } from "../../api-hooks/type";
 
 interface IRoomCard {
   room: {
@@ -8,6 +9,7 @@ interface IRoomCard {
     room_id: string;
     room_name: string;
     room_password: string;
+    status: RoomStatus;
   };
 }
 
@@ -42,11 +44,16 @@ const styled = {
       font-weight: 600;
       text-align: center;
     }
+
+    &.disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
   `,
 };
 
 function RoomCard({ room }: IRoomCard) {
-  const { room_name, room_id } = room;
+  const { room_name, room_id, status } = room;
   const history = useHistory();
 
   function getInitialRoomName() {
@@ -69,8 +76,11 @@ function RoomCard({ room }: IRoomCard) {
 
   return (
     <div
-      onClick={() => history.push(`/room/${room_id}`)}
-      className={styled.card}
+      onClick={() =>
+        status === RoomStatus.ACCEPTED && history.push(`/room/${room_id}`)
+      }
+      className={cx(styled.card, { disabled: status !== RoomStatus.ACCEPTED })}
+      title={status === RoomStatus.PENDING && status}
     >
       <div style={{ backgroundColor: getRandomColor() }} className="initial">
         <span>{getInitialRoomName()}</span>

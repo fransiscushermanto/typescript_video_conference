@@ -5,6 +5,7 @@ const RoomController = require("../controller/RoomController");
 router.route("/createRoom").post(RoomController.createRoom);
 router.route("/joinRoom").post(RoomController.joinRoom);
 router.route("/getRooms").get(RoomController.getRooms);
+router.route("/checkUserRoom").post(RoomController.checkUserRoom);
 router.route("/checkRoom").post(RoomController.checkRoom);
 router.route("/isHost").post(RoomController.isHost);
 router.route("/getRoomParticipants").get(RoomController.getRoomParticipants);

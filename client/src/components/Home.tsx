@@ -98,7 +98,7 @@ const Home: React.FC<Props> = ({ history }) => {
         }
         break;
       case HomePages.JOIN:
-        history.push(`/join/${formData.room_id}`);
+
         break;
       default:
         break;

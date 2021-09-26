@@ -31,7 +31,7 @@ module.exports = {
   },
   getRoomParticipants: async (req, res, next) => {
     const { user_id, room_id } = req.query;
-    if (utils.checkRoom(user_id, room_id)) {
+    if (utils.checkUserRoom(user_id, room_id)) {
       return res.status(200).send({
         participants: await utils.getRoomParticipants(user_id, room_id),
       });
@@ -39,14 +39,14 @@ module.exports = {
       return res.status(200).send([]);
     }
   },
-  checkRoom: async (req, res, next) => {
+  checkUserRoom: async (req, res, next) => {
     const { user_id, room_id } = req.body;
     if (!user_id)
       return res.status(401).send({
         success: false,
         message: "Unauthenticated",
       });
-    if (!(await utils.checkRoom(user_id, room_id))) {
+    if (!(await utils.checkUserRoom(user_id, room_id))) {
       return res.status(400).send({
         success: false,
         message: "Room doesn't exist",
@@ -54,12 +54,34 @@ module.exports = {
     }
     return res.status(200).send({ success: true });
   },
+  checkRoom: async (req, res, next) => {
+    const { room_id } = req.body;
+    if (await utils.checkRoom(room_id)) {
+      return res.status(200).send({ success: true });
+    }
+
+    return res
+      .status(400)
+      .send({ success: false, message: "Room not available" });
+  },
   getParticipants: (req, res, next) => {
     return res.status(200).send({
       success: true,
       participants: utils.getParticipants(),
     });
   },
+  joinRoom: (req, res, next) => {
+    const { user_id, room_id, room_password } = req.body;
+
+    if (!utils.validateJoiningRoom(user_id, room_id, room_password)) {
+      return res.status(400).send({
+        success: false,
+        message: "Password you provided is incorrect",
+      });
+    }
+    return res.status(200).send({ success: true });
+  },
+
   isHost: (req, res, next) => {
     const { user_id, room_id } = req.body;
     try {
@@ -72,18 +94,6 @@ module.exports = {
       return res.status(400).send({ success: false, message: error });
     }
   },
-  joinRoom: (req, res, next) => {
-    const { room_id, room_password } = req.body;
-    const userId = utils.generateUserId();
-    if (!utils.checkPassword(room_id, room_password)) {
-      return res.status(400).send({
-        success: false,
-        message: "Password you provided is incorrect",
-      });
-    }
-    return res.status(200).send({ success: true, user_id: userId });
-  },
-
   getRoomDetails: (req, res, next) => {
     const { room_id } = req.query;
     if (utils.existMeetingRoom(room_id)) {

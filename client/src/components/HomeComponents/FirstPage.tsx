@@ -48,6 +48,7 @@ function FirstPage(props: Props) {
     isFetching,
   } = useGetRooms(me && me.user_id, {
     enabled: !!(me && me.user_id),
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

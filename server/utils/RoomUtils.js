@@ -30,7 +30,6 @@ const createRoom = async ({ room_host, room_name }) => {
         {
           user_id: room_host,
           status: ParticipantType.HOST,
-          allowed: true,
         },
       ],
     };
@@ -56,28 +55,43 @@ const getRooms = async (user_id) => {
  * @param {string} room_id
  * @returns true | false
  */
-const checkRoom = async (user_id, room_id) => {
-  return await admin.checkRoom(user_id, room_id);
+const checkUserRoom = async (user_id, room_id) => {
+  return await admin.checkUserRoom(user_id, room_id);
 };
 
 const getRoomParticipants = async (user_id, room_id) => {
   return await admin.getRoomParticipants(user_id, room_id);
 };
 
+const checkRoom = async (room_id) => {
+  return await admin.checkRoom(room_id);
+};
+
+const validateJoiningRoom = async (user_id, room_id, room_password) => {
+  if (await admin.validateRoomPassword(room_id, room_password)) {
+    await admin.joinRoom(room_id, {
+      user_id,
+      status: ParticipantType.PARTICIPANT,
+    });
+  }
+
+  return false;
+};
+
 /**
  * @param {string} room_id
  * @param {string} room_password
  */
-const validateRoomJoining = (room_id, room_password) => {
+const validateJoiningMeeting = (room_id, room_password) => {
   if (existMeetingRoom(room_id)) {
-    if (checkPassword(room_id, room_password)) {
+    if (checkRoomPassword(room_id, room_password)) {
       return true;
     } else {
       return false;
     }
   } else {
-    return false;
   }
+  return false;
 };
 /**
  * @param {{user_id:string, name:string, room_id:string}} newParticipant
@@ -148,7 +162,7 @@ const generateUserId = (length = 15) => {
  * @param {string} room_id
  * @param {string} room_password
  */
-const checkPassword = (room_id, room_password) => {
+const checkMeetingPassword = (room_id, room_password) => {
   const room = rooms.filter((room) => room.room_id === room_id)[0];
   if (room.room_password === room_password) {
     return true;
@@ -353,14 +367,16 @@ module.exports = {
   getRoomParticipants,
   createRoom,
   checkRoom,
+  checkUserRoom,
   existMeetingRoom,
   existUser,
   getMeetingParticipants,
-  checkPassword,
+  checkMeetingPassword,
   generate,
   getSpecificParticipantInRoom,
   setParticipants,
-  validateRoomJoining,
+  validateJoiningRoom,
+  validateJoiningMeeting,
   removeUserFromRoom,
   getRoomHosts,
   ParticipantType,
