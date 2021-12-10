@@ -6,11 +6,12 @@ import App from "./App";
 import { RoomProvider } from "./components/Providers/RoomProvider";
 import { MessageProvider } from "./components/Providers/MessageProvider";
 
-import "./sass/style.scss";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import { FirebaseProvider } from "./components/Providers/FirebaseProvider";
 import { AuthProvider } from "./components/Providers/AuthProvider";
 import { QueryClient, QueryClientProvider } from "react-query";
+import GlobalStyles from "./styles/app";
+
 const queryClient = new QueryClient();
 
 ReactDOM.render(
@@ -26,6 +27,7 @@ ReactDOM.render(
         </RoomProvider>
       </FirebaseProvider>
     </QueryClientProvider>
+    <GlobalStyles />
   </BrowserRouter>,
   document.getElementById("root"),
 );

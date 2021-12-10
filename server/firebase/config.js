@@ -195,7 +195,11 @@ class FirebaseAdmin {
       await this.firestore
         .collection(collections.waiting_room)
         .doc(room_id)
-        .update({ users: [...exist_waiting_room.users, payload] });
+        .update({
+          users: exist_waiting_room.users
+            ? [...exist_waiting_room.users, payload]
+            : [payload],
+        });
     } else {
       await this.firestore
         .collection(collections.waiting_room)

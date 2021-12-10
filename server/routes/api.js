@@ -11,6 +11,7 @@ router.route("/isHost").post(RoomController.isHost);
 router.route("/getRoomParticipants").get(RoomController.getRoomParticipants);
 router.route("/getParticipants").get(RoomController.getParticipants);
 router.route("/getRoomDetails").get(RoomController.getRoomDetails);
+router.route("/getUserInfo").post(RoomController.getUserInfo);
 router.route("/updateRoom").post(RoomController.updateRoom);
 router.route("/flushRoom").get(RoomController.flushRoom);
 

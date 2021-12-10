@@ -32,7 +32,7 @@ interface RoomModel {
   room_permission?: RoomPermission;
 }
 
-interface UserModel {
+export interface UserModel {
   user_id?: string;
   user_name?: string;
   socket_id?: string;

@@ -43,6 +43,15 @@ const createRoom = async ({ room_host, room_name }) => {
 /**
  *
  * @param {string} user_id
+ * @returns {object} user
+ */
+const getUser = async (user_id) => {
+  return await admin.getUser(user_id);
+};
+
+/**
+ *
+ * @param {string} user_id
  * @returns {Array} rooms
  */
 const getRooms = async (user_id) => {
@@ -388,4 +397,5 @@ module.exports = {
   generateUserId,
   getParticipants,
   getParticipant,
+  getUser,
 };

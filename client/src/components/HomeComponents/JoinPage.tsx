@@ -1,9 +1,10 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { MessageContext } from "../Providers/MessageProvider";
 import { Severities } from "../CustomSnackbar";
 import axios from "../../axios-instance";
-import { useCheckRoom } from "../api-hooks";
+import { useCheckRoom, useJoinRoom } from "../api-hooks";
 import { useMe } from "../../hooks";
+import { useFormContext } from "react-hook-form";
 
 interface Props {
   setCurrentPage: React.Dispatch<React.SetStateAction<string>>;
@@ -22,8 +23,35 @@ const JoinPage: React.FC<Props> = ({
 }) => {
   const [me] = useMe();
   const [messages, setMessages] = useContext(MessageContext);
+  const { getValues } = useFormContext();
 
-  const { mutateAsync } = useCheckRoom({
+  const { mutateAsync: mutateAsyncCheckRoom } = useCheckRoom({
+    onSuccess: async () => {
+      var password = prompt("Please enter room password");
+      if (password !== null) {
+        await mutateAsyncJoinRoom({
+          room_id: getValues().room_id,
+          room_password: password,
+          user_id: me.user_id,
+        });
+      }
+    },
+    onError: ({ response: { data } }) => {
+      setMessages([
+        ...messages,
+        {
+          id: Date.now(),
+          message: data.message,
+          severity: Severities.ERROR,
+        },
+      ]);
+    },
+  });
+
+  const { mutateAsync: mutateAsyncJoinRoom } = useJoinRoom({
+    onSuccess: () => {
+      onSubmit(getValues());
+    },
     onError: ({ response: { data } }) => {
       setMessages([
         ...messages,
@@ -37,20 +65,7 @@ const JoinPage: React.FC<Props> = ({
   });
 
   const checkRoom = async (formData: { room_id: string; name: string }) => {
-    const res = await mutateAsync({ room_id: formData.room_id });
-    if (res.success) {
-      var password = prompt("Please enter room password");
-      if (password !== null) {
-        const res = await axios.post("/api/joinRoom", {
-          room_id: formData.room_id,
-          room_password: password,
-          user_id: me.user_id,
-        });
-        // if (res.data.success) {
-        //   onSubmit(formData);
-        // }
-      }
-    }
+    await mutateAsyncCheckRoom({ room_id: formData.room_id });
   };
 
   return (

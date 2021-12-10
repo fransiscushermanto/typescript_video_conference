@@ -1,7 +1,19 @@
 import * as firebase from "firebase/app";
 import Cookies from "js-cookie";
 import "firebase/storage";
-import { getFirestore, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  addDoc,
+  collection,
+  Firestore,
+  doc,
+  getDoc,
+  onSnapshot,
+  getDocs,
+  DocumentSnapshot,
+  DocumentData,
+  FirestoreError,
+} from "firebase/firestore";
 import "firebase/database";
 import {
   getAuth,
@@ -9,6 +21,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
+import { Collections } from "./collections";
 // Your web app's Firebase configuration
 var config = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -19,6 +32,12 @@ var config = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
+export interface IFirestoreOnSnapshotArguments {
+  onNext: (snapshot: DocumentSnapshot<DocumentData>) => void;
+  onError?: (error: FirestoreError) => void;
+  onCompletion?: () => void;
+}
+
 const provider: GoogleAuthProvider = new GoogleAuthProvider();
 
 class Firebase {
@@ -26,7 +45,7 @@ class Firebase {
   auth: Auth;
   db: any;
   storage: any;
-  firestore: any;
+  firestore: Firestore;
 
   constructor() {
     // Initialize Firebase
@@ -51,6 +70,45 @@ class Firebase {
   logout() {
     Cookies.remove("Authorization");
     return this.auth.signOut();
+  }
+
+  getRooms(
+    user_id: string,
+    { onError, onNext, onCompletion }: IFirestoreOnSnapshotArguments,
+  ) {
+    return onSnapshot(
+      doc(this.firestore, Collections.user_rooms, user_id),
+      onNext,
+      onError,
+      onCompletion,
+    );
+  }
+
+  getUserInWaitingRoom(
+    room_id: string,
+    { onError, onNext, onCompletion }: IFirestoreOnSnapshotArguments,
+  ) {
+    return onSnapshot(
+      doc(this.firestore, Collections.waiting_room, room_id),
+      onNext,
+      onError,
+      onCompletion,
+    );
+  }
+
+  async getRoom(room_id: string) {
+    try {
+      const docRef = doc(this.firestore, Collections.rooms, room_id);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        return docSnap.data();
+      } else {
+        return {};
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
 

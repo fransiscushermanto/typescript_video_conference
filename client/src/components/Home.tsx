@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { HomePages } from "./constants";
 import FirstPage from "./HomeComponents/FirstPage";
@@ -50,7 +50,7 @@ const Home: React.FC<Props> = ({ history }) => {
   const [messages, setMessages] = useContext(MessageContext);
   const [currentPage, setCurrentPage] = useState<HomePages>(HomePages.DEFAULT);
 
-  const { handleSubmit, register, errors } = useForm({
+  const formContext = useForm({
     resolver: yupResolver(
       currentPage === "join"
         ? joinSchema
@@ -59,6 +59,8 @@ const Home: React.FC<Props> = ({ history }) => {
         : null,
     ),
   });
+
+  const { handleSubmit, register, errors } = formContext;
 
   const onSubmit = async (formData: {
     room_id: string;
@@ -98,7 +100,7 @@ const Home: React.FC<Props> = ({ history }) => {
         }
         break;
       case HomePages.JOIN:
-
+        setCurrentPage(HomePages.DEFAULT);
         break;
       default:
         break;
@@ -139,12 +141,12 @@ const Home: React.FC<Props> = ({ history }) => {
   }, []);
 
   return (
-    <>
+    <FormProvider {...formContext}>
       <button onClick={logout} className={styled.logout}>
         <img src={LogOutSVG} alt="logout" />
       </button>
       <div className="home-wrapper wrapper">{renderPage()}</div>
-    </>
+    </FormProvider>
   );
 };
 

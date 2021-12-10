@@ -90,3 +90,8 @@ export function compare2Objects(x, y) {
 
   return true;
 }
+
+export const callAllFunctions =
+  (...fns) =>
+  (...args) =>
+    fns.forEach((fn) => fn?.(...args));

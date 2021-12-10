@@ -1,7 +1,6 @@
 import { css } from "@emotion/css";
-import React, { useEffect } from "react";
-import { QueryClient } from "react-query";
-import { useMe, useRoom } from "../../hooks";
+import React from "react";
+import { useMe } from "../../hooks";
 import { useGetRooms } from "../api-hooks";
 import { RoomCard } from "./firstPageComp";
 
@@ -38,22 +37,10 @@ const styled = {
 };
 
 function FirstPage(props: Props) {
-  const queryClient = new QueryClient();
   const { setCurrentPage } = props;
   const [me] = useMe();
 
-  const {
-    data: rooms,
-    isLoading,
-    isFetching,
-  } = useGetRooms(me && me.user_id, {
-    enabled: !!(me && me.user_id),
-    refetchOnWindowFocus: false,
-  });
-
-  useEffect(() => {
-    queryClient.resetQueries("rooms");
-  }, []);
+  const { rooms } = useGetRooms(me && me.user_id);
 
   return (
     <>
@@ -68,10 +55,9 @@ function FirstPage(props: Props) {
         </div>
       </div>
       <div className={styled.roomWrapper}>
-        {!isLoading &&
-          !isFetching &&
-          rooms &&
-          rooms.map((room, i) => <RoomCard key={i} room={room} />)}
+        {rooms.map((room, i) => (
+          <RoomCard key={i} room={room} />
+        ))}
       </div>
     </>
   );

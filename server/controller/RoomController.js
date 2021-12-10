@@ -29,6 +29,16 @@ module.exports = {
       rooms: await utils.getRooms(user_id),
     });
   },
+  getUserInfo: async (req, res, next) => {
+    const { user_id } = req.body;
+    console.log(user_id);
+    try {
+      const user = await utils.getUser(user_id);
+      return res.status(200).send({ user_id, user_name: user.displayName });
+    } catch (error) {
+      return res.status(404).send({ message: "User not found" });
+    }
+  },
   getRoomParticipants: async (req, res, next) => {
     const { user_id, room_id } = req.query;
     if (utils.checkUserRoom(user_id, room_id)) {

@@ -80,7 +80,7 @@ function RoomCard({ room }: IRoomCard) {
         status === RoomStatus.ACCEPTED && history.push(`/room/${room_id}`)
       }
       className={cx(styled.card, { disabled: status !== RoomStatus.ACCEPTED })}
-      title={status === RoomStatus.PENDING && status}
+      title={status === RoomStatus.PENDING ? status : ""}
     >
       <div style={{ backgroundColor: getRandomColor() }} className="initial">
         <span>{getInitialRoomName()}</span>

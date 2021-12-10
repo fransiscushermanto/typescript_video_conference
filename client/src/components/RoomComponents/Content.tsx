@@ -1,14 +1,14 @@
 import { css } from "@emotion/css";
-import { useEffect } from "react";
 import { useHistory, useParams } from "react-router";
-import { useMe, useRoom } from "../../hooks";
 import Participant from "./participants/Participant";
+import WaitingRoom from "./waitingRoom/WaitingRoom";
 
 const styled = {
   root: css`
     flex: 1;
     width: 100%;
     padding: 2.5rem;
+    color: white;
   `,
 };
 
@@ -25,6 +25,8 @@ function Content() {
     switch (menu) {
       case "participants":
         return <Participant />;
+      case "waiting-room":
+        return <WaitingRoom />;
       default:
         return <div></div>;
     }
