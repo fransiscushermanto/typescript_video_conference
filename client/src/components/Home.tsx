@@ -14,6 +14,7 @@ import { useAuth, useFirebase, useMe, useRoom } from "../hooks";
 import { css } from "@emotion/css";
 import { MessageContext } from "./Providers/MessageProvider";
 import { Severities } from "./CustomSnackbar";
+import { useCreateRoom } from "./api-hooks";
 
 interface Props extends RouteComponentProps {
   history: H.History<H.LocationState>;
@@ -49,6 +50,30 @@ const Home: React.FC<Props> = ({ history }) => {
   const [me] = useMe();
   const [messages, setMessages] = useContext(MessageContext);
   const [currentPage, setCurrentPage] = useState<HomePages>(HomePages.DEFAULT);
+  const { mutateAsync: mutateAsyncCreateRoom } = useCreateRoom({
+    onSuccess: ({ message }) => {
+      setMessages([
+        ...messages,
+        {
+          id: Date.now(),
+          message: message,
+          severity: Severities.SUCCESS,
+        },
+      ]);
+      setCurrentPage(HomePages.DEFAULT);
+    },
+    onError: (error) => {
+      const { message } = error.response.data;
+      setMessages([
+        ...messages,
+        {
+          id: Date.now(),
+          message: message,
+          severity: Severities.ERROR,
+        },
+      ]);
+    },
+  });
 
   const formContext = useForm({
     resolver: yupResolver(
@@ -68,36 +93,12 @@ const Home: React.FC<Props> = ({ history }) => {
     user_id: string;
     room_name: string;
   }): Promise<void> => {
-    let res;
     switch (currentPage) {
       case HomePages.CREATE:
-        try {
-          res = await axios.post("/api/createRoom", {
-            room_name: formData.room_name,
-            user_id: me.user_id,
-          });
-          if (res.data.success) {
-            setMessages([
-              ...messages,
-              {
-                id: Date.now(),
-                message: res.data.message,
-                severity: Severities.SUCCESS,
-              },
-            ]);
-            setCurrentPage(HomePages.DEFAULT);
-          }
-        } catch (error) {
-          const { message } = error.response.data;
-          setMessages([
-            ...messages,
-            {
-              id: Date.now(),
-              message: message,
-              severity: Severities.ERROR,
-            },
-          ]);
-        }
+        await mutateAsyncCreateRoom({
+          room_name: formData.room_name,
+          user_id: me.user_id,
+        });
         break;
       case HomePages.JOIN:
         setCurrentPage(HomePages.DEFAULT);

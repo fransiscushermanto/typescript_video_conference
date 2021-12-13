@@ -69,6 +69,29 @@ class FirebaseAdmin {
     return !!(await this.getRoom(room_id));
   }
 
+  async getUsersInWaitingRoom(room_id) {
+    const res = await this.firestore
+      .collection(collections.waiting_room)
+      .doc(room_id)
+      .get();
+    if (res.data()) {
+      const users = res.data().users;
+
+      return await Promise.all(
+        users.map(async ({ user_id, status }) => {
+          const userInfo = await this.getUser(user_id);
+          return {
+            user_id,
+            status,
+            user_name: userInfo.displayName,
+          };
+        }),
+      );
+    }
+
+    return [];
+  }
+
   /**
    *
    * @param {object} {room_id, room_host, room_password, room_name} payload
@@ -84,7 +107,7 @@ class FirebaseAdmin {
       .doc(payload.room_id)
       .set(payload);
 
-    if (!existingUserRoom.data() || !Array.isArray(existingUserRoom.data())) {
+    if (!existingUserRoom.data()?.rooms) {
       await this.firestore
         .collection(collections.user_rooms)
         .doc(payload.room_host)
@@ -119,7 +142,6 @@ class FirebaseAdmin {
         .then((res) => {
           return res.data() ? res.data().rooms : [];
         });
-
       if (user_rooms.length > 0) {
         const rooms = user_rooms
           .filter(({ status }) => status !== RoomStatus.DECLINED)
@@ -180,47 +202,55 @@ class FirebaseAdmin {
   async validateRoomPassword(room_id, room_password) {
     if (room_id && room_password) {
       const res = await this.getRoom(room_id);
-      return res.room_password === room_password;
+      return String(res.room_password) === String(room_password);
     }
     return false;
   }
 
   async joinRoom(room_id, payload) {
-    const room_data = await this.getRoom(room_id);
+    try {
+      const room_data = await this.getRoom(room_id);
 
-    const exist_waiting_room = await this.getExistWaitingRoom(room_id);
-    const user_rooms = await this.getUserRooms(payload.user_id);
+      const exist_waiting_room = await this.getExistWaitingRoom(room_id);
+      const user_rooms = await this.getUserRooms(payload.user_id);
 
-    if (exist_waiting_room) {
-      await this.firestore
-        .collection(collections.waiting_room)
-        .doc(room_id)
-        .update({
-          users: exist_waiting_room.users
-            ? [...exist_waiting_room.users, payload]
-            : [payload],
-        });
-    } else {
-      await this.firestore
-        .collection(collections.waiting_room)
-        .doc(room_id)
-        .set({ users: [payload] });
-    }
+      console.log("exist_waiting_room", exist_waiting_room);
+      if (exist_waiting_room) {
+        await this.firestore
+          .collection(collections.waiting_room)
+          .doc(room_id)
+          .update({
+            users: exist_waiting_room.users
+              ? [...exist_waiting_room.users, payload]
+              : [payload],
+          });
+      } else {
+        await this.firestore
+          .collection(collections.waiting_room)
+          .doc(room_id)
+          .set({ users: [payload] });
+      }
 
-    if (user_rooms) {
-      await this.firestore
-        .collection(collections.user_rooms)
-        .doc(payload.user_id)
-        .update({
-          rooms: [...user_rooms.rooms, { room_id, status: RoomStatus.PENDING }],
-        });
-    } else {
-      await this.firestore
-        .collection(collections.user_rooms)
-        .doc(payload.user_id)
-        .set({
-          rooms: [{ room_id, status: RoomStatus.PENDING }],
-        });
+      if (user_rooms) {
+        await this.firestore
+          .collection(collections.user_rooms)
+          .doc(payload.user_id)
+          .update({
+            rooms: [
+              ...user_rooms.rooms,
+              { room_id, status: RoomStatus.PENDING },
+            ],
+          });
+      } else {
+        await this.firestore
+          .collection(collections.user_rooms)
+          .doc(payload.user_id)
+          .set({
+            rooms: [{ room_id, status: RoomStatus.PENDING }],
+          });
+      }
+    } catch (error) {
+      console.log(error);
     }
 
     // await this.firestore

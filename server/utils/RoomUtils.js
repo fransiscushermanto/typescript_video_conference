@@ -51,6 +51,15 @@ const getUser = async (user_id) => {
 
 /**
  *
+ * @param {string} room_id
+ * @returns {User[]}
+ */
+const getUsersInWaitingRoom = async (room_id) => {
+  return await admin.getUsersInWaitingRoom(room_id);
+};
+
+/**
+ *
  * @param {string} user_id
  * @returns {Array} rooms
  */
@@ -82,6 +91,7 @@ const validateJoiningRoom = async (user_id, room_id, room_password) => {
       user_id,
       status: ParticipantType.PARTICIPANT,
     });
+    return true;
   }
 
   return false;
@@ -398,4 +408,5 @@ module.exports = {
   getParticipants,
   getParticipant,
   getUser,
+  getUsersInWaitingRoom,
 };

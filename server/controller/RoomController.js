@@ -11,12 +11,10 @@ module.exports = {
     });
     if (success) {
       return res.status(200).send({
-        success,
         message,
       });
     } else {
       return res.status(500).send({
-        success,
         message,
       });
     }
@@ -31,12 +29,20 @@ module.exports = {
   },
   getUserInfo: async (req, res, next) => {
     const { user_id } = req.body;
-    console.log(user_id);
     try {
       const user = await utils.getUser(user_id);
       return res.status(200).send({ user_id, user_name: user.displayName });
     } catch (error) {
       return res.status(404).send({ message: "User not found" });
+    }
+  },
+  getUsersInWaitingRoom: async (req, res, next) => {
+    const { room_id } = req.query;
+    try {
+      const usersInWaitingRoom = await utils.getUsersInWaitingRoom(room_id);
+      return res.status(200).send({ usersInWaitingRoom });
+    } catch (error) {
+      return res.status(500).send({ message: "An error occured" });
     }
   },
   getRoomParticipants: async (req, res, next) => {
@@ -80,10 +86,17 @@ module.exports = {
       participants: utils.getParticipants(),
     });
   },
-  joinRoom: (req, res, next) => {
+  joinRoom: async (req, res, next) => {
     const { user_id, room_id, room_password } = req.body;
 
-    if (!utils.validateJoiningRoom(user_id, room_id, room_password)) {
+    if (await utils.checkUserRoom(user_id, room_id)) {
+      return res.status(409).send({
+        success: false,
+        message: "You have joined this room",
+      });
+    }
+
+    if (!(await utils.validateJoiningRoom(user_id, room_id, room_password))) {
       return res.status(400).send({
         success: false,
         message: "Password you provided is incorrect",

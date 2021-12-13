@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useQuery, UseQueryOptions } from "react-query";
 import axios from "../../axios-instance";
 import { useFirebase } from "../../hooks";
+import { Severities } from "../CustomSnackbar";
 import { callAllFunctions } from "../helper";
+import { MessageContext } from "../Providers/MessageProvider";
 import {
   ParticipantType,
   QueryOptions,
@@ -24,26 +26,26 @@ export function useGetRooms(
 ) {
   const [rooms, setRooms] = useState<RoomModel[]>([]);
   const firebase = useFirebase();
+  const [messages, setMessages] = useContext(MessageContext);
 
   useEffect(() => {
     if (user_id) {
       firebase.getRooms(user_id, {
-        onNext: callAllFunctions((data) => {
+        onNext: callAllFunctions(async (data) => {
           if (data.data()) {
-            const rooms = data.data().rooms;
-            const filteredRoomStatus = rooms.filter(
-              (room) => room.status !== RoomStatus.DECLINED,
-            );
-            if (filteredRoomStatus.length === 0) {
-              setRooms([]);
-            } else {
-              filteredRoomStatus.forEach(async (room) => {
-                const res = await firebase.getRoom(room.room_id);
-                setRooms((prev) => [
-                  ...prev.filter((room) => room.room_id !== res.room_id),
-                  { ...res, status: room.status } as RoomModel,
-                ]);
-              });
+            try {
+              const res = await axios.get("/rooms", { params: { user_id } });
+              setRooms(res.data.rooms);
+            } catch (error) {
+              const { message } = error.response.data;
+              setMessages([
+                ...messages,
+                {
+                  id: Date.now(),
+                  message: message,
+                  severity: Severities.ERROR,
+                },
+              ]);
             }
           }
         }, onNext),
@@ -71,29 +73,30 @@ export function useGetUsersInWaitingRoom(
     UserInWaitingRoomModel[]
   >([]);
   const firebase = useFirebase();
+  const [messages, setMessages] = useContext(MessageContext);
 
   useEffect(() => {
     if (room_id) {
       firebase.getUserInWaitingRoom(room_id, {
         onNext: callAllFunctions(async (data) => {
           if (data.data()) {
-            const users = data.data().users;
+            try {
+              const res = await axios.get("/rooms/participants/waiting", {
+                params: { room_id },
+              });
 
-            users.map(async ({ user_id, status }) => {
-              try {
-                const { data: userInfo } = await axios.post(
-                  "/api/getUserInfo",
-                  { user_id },
-                );
-
-                setUsersInWaitingRoom((prev) => [
-                  ...prev.filter((user) => user.user_id !== userInfo.user_id),
-                  { ...userInfo, status },
-                ]);
-              } catch (error) {
-                console.log(error);
-              }
-            });
+              setUsersInWaitingRoom(res.data.usersInWaitingRoom);
+            } catch (error) {
+              const { message } = error.response.data;
+              setMessages([
+                ...messages,
+                {
+                  id: Date.now(),
+                  message: message,
+                  severity: Severities.ERROR,
+                },
+              ]);
+            }
           }
         }, onNext),
         onError,
