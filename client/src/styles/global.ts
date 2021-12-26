@@ -20,4 +20,12 @@ export default css`
     --secondary-color: #78bcc4;
     --third-color: #f7444e;
   }
+
+  ul {
+    margin: 0;
+    padding: 0;
+  }
+  li {
+    list-style-type: none;
+  }
 `;

@@ -9,9 +9,17 @@ interface Props {
 }
 
 const styled = {
+  root: css`
+    width: 100%;
+    max-width: 100%;
+    height: calc(100% - 70px);
+    display: flex;
+    flex-direction: column;
+    padding: 0 2.5rem;
+  `,
   roomWrapper: css`
-    width: 1280px;
-    height: 600px;
+    width: 100%;
+    height: 100%;
     max-height: 700px;
     overflow-y: auto;
     display: grid;
@@ -20,7 +28,7 @@ const styled = {
     grid-template-rows: repeat(auto-fill, minmax(300px, max-content));
   `,
   btnWrapper: css`
-    width: 1280px;
+    width: 100%;
     display: flex;
     justify-content: end;
     align-items: center;
@@ -43,7 +51,7 @@ function FirstPage(props: Props) {
   const { rooms } = useGetRooms(me && me.user_id);
 
   return (
-    <>
+    <div className={styled.root}>
       <div className={styled.btnWrapper}>
         <div className="inner-wrapper">
           <button onClick={() => setCurrentPage("join")} className="btn">
@@ -59,7 +67,7 @@ function FirstPage(props: Props) {
           <RoomCard key={i} room={room} />
         ))}
       </div>
-    </>
+    </div>
   );
 }
 

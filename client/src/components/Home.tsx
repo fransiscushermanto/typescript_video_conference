@@ -5,12 +5,11 @@ import { HomePages } from "./constants";
 import FirstPage from "./HomeComponents/FirstPage";
 import JoinPage from "./HomeComponents/JoinPage";
 import CreatePage from "./HomeComponents/CreatePage";
-import axios from "../axios-instance";
 import LogOutSVG from "../assets/logout.svg";
 import * as yup from "yup";
 import { RouteComponentProps } from "react-router-dom";
 import * as H from "history";
-import { useAuth, useFirebase, useMe, useRoom } from "../hooks";
+import { useAuth, useMe } from "../hooks";
 import { css } from "@emotion/css";
 import { MessageContext } from "./Providers/MessageProvider";
 import { Severities } from "./CustomSnackbar";
@@ -21,14 +20,21 @@ interface Props extends RouteComponentProps {
 }
 
 const styled = {
+  header: css`
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    height: 70px;
+    background-color: transparent !important;
+    padding: 0.625rem 2.5rem;
+    margin-bottom: 1.25rem;
+  `,
   logout: css`
-    position: absolute;
+    margin-left: auto;
     background-color: transparent;
     border: none;
     width: 2.5rem;
     height: 2.5rem;
-    top: 2%;
-    right: 1%;
     > img {
       width: 100%;
       height: 100%;
@@ -143,10 +149,14 @@ const Home: React.FC<Props> = ({ history }) => {
 
   return (
     <FormProvider {...formContext}>
-      <button onClick={logout} className={styled.logout}>
-        <img src={LogOutSVG} alt="logout" />
-      </button>
-      <div className="home-wrapper wrapper">{renderPage()}</div>
+      <div className="home-wrapper wrapper">
+        <header className={styled.header}>
+          <button onClick={logout} className={styled.logout}>
+            <img src={LogOutSVG} alt="logout" />
+          </button>
+        </header>
+        {renderPage()}
+      </div>
     </FormProvider>
   );
 };

@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { css, cx } from "@emotion/css";
-import { useHistory, useLocation, useRouteMatch } from "react-router";
+import {
+  useHistory,
+  useLocation,
+  useRouteMatch,
+  useParams,
+} from "react-router";
+import { useGetUsersInWaitingRoom } from "../api-hooks";
+import { menus } from "./constants";
 
 const styled = {
   sidebar: css`
@@ -49,33 +56,24 @@ const styled = {
   `,
 };
 
-const menus = [
-  {
-    name: undefined,
-    label: "Home",
-  },
-  {
-    name: "participants",
-    label: "Pariticipants",
-  },
-  {
-    name: "waiting-room",
-    label: "Waiting Room",
-  },
-  {
-    name: "settings",
-    label: "Settings",
-  },
-];
-
-function SidebarRoom() {
+function SidebarRoom({ activeMenu }: { activeMenu: string }) {
   const history = useHistory();
-  const { pathname } = useLocation();
+  const { room_id } = useParams<{ room_id }>();
   const { url } = useRouteMatch();
-  const [isNewNotification, setIsNewNotification] = useState({
-    "waiting-room": true,
+  const [isNewNotification, setIsNewNotification] = useState<{
+    "waiting-room"?: boolean;
+    participants?: boolean;
+  }>({
+    "waiting-room": false,
   });
-  const activeMenu = pathname.split(url)[1].split("/")[1];
+  const { usersInWaitingRoom } = useGetUsersInWaitingRoom(room_id);
+
+  useEffect(() => {
+    setIsNewNotification({
+      ...isNewNotification,
+      "waiting-room": usersInWaitingRoom.length > 0,
+    });
+  }, [usersInWaitingRoom]);
 
   return (
     <div className={styled.sidebar}>

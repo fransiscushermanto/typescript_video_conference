@@ -1,14 +1,10 @@
 require("fs");
 const { FirebaseAdmin } = require("../firebase/config");
 const admin = new FirebaseAdmin();
+const ParticipantType = require("./types");
 
 let rooms = [];
 let participants = [];
-const ParticipantType = {
-  HOST: "host",
-  CO_HOST: "co-host",
-  PARTICIPANT: "participant",
-};
 
 /**
  * @param {Object} {room_host, room_name}
@@ -29,7 +25,7 @@ const createRoom = async ({ room_host, room_name }) => {
       room_participants: [
         {
           user_id: room_host,
-          status: ParticipantType.HOST,
+          role: ParticipantType.HOST,
         },
       ],
     };
@@ -56,6 +52,16 @@ const getUser = async (user_id) => {
  */
 const getUsersInWaitingRoom = async (room_id) => {
   return await admin.getUsersInWaitingRoom(room_id);
+};
+
+const updateUsersInWaitingRoom = async (room_id, user_id, action) => {
+  switch (action) {
+    case "accept":
+      return await admin.acceptUserToRoom(room_id, user_id);
+
+    case "reject":
+      return await admin.rejectUserToRoom(room_id, user_id);
+  }
 };
 
 /**
@@ -409,4 +415,5 @@ module.exports = {
   getParticipant,
   getUser,
   getUsersInWaitingRoom,
+  updateUsersInWaitingRoom,
 };

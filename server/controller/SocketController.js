@@ -21,7 +21,7 @@ module.exports = function (socket) {
         .emit("LEAVING", `${leavingUser.user_name} left the room`);
       // const data = removeUserFromRoom(leavingUser.user_id);
       // if (data.success) {
-      //   const { room_id, name, newHost, status, changeHost } = data;
+      //   const { room_id, name, newHost, role, changeHost } = data;
 
       //   // if (status === ParticipantType.HOST && changeHost) {
       //   //   let prevRoomDetail = getRoomDetails(room_id);
@@ -54,7 +54,7 @@ module.exports = function (socket) {
       user_name: name,
       room_id,
       socket_id: socket.id,
-      status: ParticipantType.HOST,
+      role: ParticipantType.HOST,
     });
     socket.join(room_id);
   });
@@ -65,7 +65,7 @@ module.exports = function (socket) {
         user_name: name,
         room_id,
         socket_id: socket.id,
-        status: ParticipantType.HOST,
+        role: ParticipantType.HOST,
       });
     } else {
       setParticipants({
@@ -73,7 +73,7 @@ module.exports = function (socket) {
         user_name: name,
         room_id,
         socket_id: socket.id,
-        status: ParticipantType.PARTICIPANT,
+        role: ParticipantType.PARTICIPANT,
       });
     }
     socket.to(room_id).emit("WELCOME", {

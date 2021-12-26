@@ -1,6 +1,8 @@
 require("dotenv").config();
 const admin = require("firebase-admin");
 const collections = require("./collections");
+const ParticipantType = require("../utils/types");
+const produce = require("immer").produce;
 
 const RoomStatus = {
   PENDING: "pending",
@@ -57,6 +59,14 @@ class FirebaseAdmin {
     return res.data();
   }
 
+  async getWaitingRoomUser(room_id) {
+    const res = await this.firestore
+      .collection(collections.waiting_room)
+      .doc(room_id)
+      .get();
+    return res.data();
+  }
+
   async getExistWaitingRoom(room_id) {
     const res = await this.firestore
       .collection(collections.waiting_room)
@@ -67,29 +77,6 @@ class FirebaseAdmin {
 
   async checkRoom(room_id) {
     return !!(await this.getRoom(room_id));
-  }
-
-  async getUsersInWaitingRoom(room_id) {
-    const res = await this.firestore
-      .collection(collections.waiting_room)
-      .doc(room_id)
-      .get();
-    if (res.data()) {
-      const users = res.data().users;
-
-      return await Promise.all(
-        users.map(async ({ user_id, status }) => {
-          const userInfo = await this.getUser(user_id);
-          return {
-            user_id,
-            status,
-            user_name: userInfo.displayName,
-          };
-        }),
-      );
-    }
-
-    return [];
   }
 
   /**
@@ -142,7 +129,7 @@ class FirebaseAdmin {
         .then((res) => {
           return res.data() ? res.data().rooms : [];
         });
-      if (user_rooms.length > 0) {
+      if (user_rooms && user_rooms.length > 0) {
         const rooms = user_rooms
           .filter(({ status }) => status !== RoomStatus.DECLINED)
           .map(
@@ -166,10 +153,10 @@ class FirebaseAdmin {
 
       const participants = room_data.room_participants.map(
         async (participant) => {
-          const user_data = await this.getUser(participant.user_id);
+          const userData = await this.getUser(participant.user_id);
           return {
             ...participant,
-            user_name: user_data.displayName,
+            user_name: userData.displayName,
           };
         },
       );
@@ -193,7 +180,11 @@ class FirebaseAdmin {
         .doc(user_id)
         .get()
         .then((res) => (res.data() ? res.data().rooms : []));
-      return user_rooms.some((room) => room.room_id === room_id);
+      return user_rooms
+        ? user_rooms
+            .filter((room) => room.status === RoomStatus.ACCEPTED)
+            .some((room) => room.room_id === room_id)
+        : false;
     }
 
     return false;
@@ -214,24 +205,23 @@ class FirebaseAdmin {
       const exist_waiting_room = await this.getExistWaitingRoom(room_id);
       const user_rooms = await this.getUserRooms(payload.user_id);
 
-      console.log("exist_waiting_room", exist_waiting_room);
       if (exist_waiting_room) {
         await this.firestore
           .collection(collections.waiting_room)
           .doc(room_id)
           .update({
             users: exist_waiting_room.users
-              ? [...exist_waiting_room.users, payload]
-              : [payload],
+              ? [...exist_waiting_room.users, payload.user_id]
+              : [payload.user_id],
           });
       } else {
         await this.firestore
           .collection(collections.waiting_room)
           .doc(room_id)
-          .set({ users: [payload] });
+          .set({ users: [payload.user_id] });
       }
 
-      if (user_rooms) {
+      if (user_rooms && user_rooms.rooms) {
         await this.firestore
           .collection(collections.user_rooms)
           .doc(payload.user_id)
@@ -259,6 +249,69 @@ class FirebaseAdmin {
     //   .update({
     //     room_participants: [...room_data.room_participants, payload],
     //   });
+  }
+
+  async getUsersInWaitingRoom(room_id) {
+    const data = await this.getWaitingRoomUser(room_id);
+    if (data) {
+      const users = data.users;
+
+      return await Promise.all(
+        users
+          ? users.map(async (user_id) => {
+              const userInfo = await this.getUser(user_id);
+              return {
+                user_id,
+                user_name: userInfo.displayName,
+              };
+            })
+          : [],
+      );
+    }
+
+    return [];
+  }
+
+  async acceptUserToRoom(room_id, user_id) {
+    const { rooms } = await this.getUserRooms(user_id);
+    const { users } = await this.getWaitingRoomUser(room_id);
+    const userData = await this.getUser(user_id);
+    const participants = await this.getRoomParticipants(user_id, room_id);
+
+    return new Promise((resolve) => {
+      const updatedUserRooms = produce(rooms, (draft) => {
+        const target = draft.find((room) => room.room_id === room_id);
+        const index = draft.indexOf(target);
+        draft[index].status = RoomStatus.ACCEPTED;
+      });
+
+      const updatedUsersInWaitingRoom = users.filter(
+        (user) => user !== user_id,
+      );
+
+      this.firestore.collection(collections.user_rooms).doc(user_id).update({
+        rooms: updatedUserRooms,
+      });
+
+      this.firestore.collection(collections.waiting_room).doc(room_id).update({
+        users: updatedUsersInWaitingRoom,
+      });
+
+      this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .update({
+          room_participants: [
+            ...participants,
+            {
+              role: ParticipantType.PARTICIPANT,
+              user_id,
+              user_name: userData.displayName,
+            },
+          ],
+        });
+      resolve(true);
+    });
   }
 }
 

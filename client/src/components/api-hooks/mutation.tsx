@@ -7,7 +7,7 @@ export function useCheckRoom(
   return useMutation<any, any, { room_id }>(
     "check_room",
     async ({ room_id }) => {
-      const res = await axios.post("/rooms/check", {
+      const res = await axios.post("/rooms/verify", {
         room_id,
       });
       return res.data;
@@ -52,6 +52,32 @@ export function useJoinRoom(
         room_password,
         user_id,
       });
+      return res.data;
+    },
+    options,
+  );
+}
+
+export function useUpdateUsersInWaitingRoom(
+  options: UseMutationOptions<
+    any,
+    any,
+    { room_id: string; user_id: string; action: "accept" | "reject" }
+  > = {},
+) {
+  return useMutation<
+    any,
+    any,
+    { room_id: string; user_id: string; action: "accept" | "reject" }
+  >(
+    "join_room",
+    async ({ room_id, user_id, action }) => {
+      const res = await axios.post(
+        `/rooms/${room_id}/participants/waiting/${user_id}`,
+        {
+          action,
+        },
+      );
       return res.data;
     },
     options,

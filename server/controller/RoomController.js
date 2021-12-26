@@ -20,7 +20,7 @@ module.exports = {
     }
   },
   getRooms: async (req, res, next) => {
-    const { user_id } = req.query;
+    const { user_id } = req.params;
 
     return res.status(200).send({
       success: true,
@@ -37,16 +37,30 @@ module.exports = {
     }
   },
   getUsersInWaitingRoom: async (req, res, next) => {
-    const { room_id } = req.query;
+    const { room_id } = req.params;
     try {
-      const usersInWaitingRoom = await utils.getUsersInWaitingRoom(room_id);
-      return res.status(200).send({ usersInWaitingRoom });
+      const users = await utils.getUsersInWaitingRoom(room_id);
+      return res.status(200).send({ users });
     } catch (error) {
+      console.log(error);
+      return res.status(500).send({ message: "An error occured" });
+    }
+  },
+  updateParticipantsInWaitingRoom: async (req, res, next) => {
+    const { user_id, room_id } = req.params;
+    const { action } = req.body;
+
+    try {
+      await utils.updateUsersInWaitingRoom(room_id, user_id, action);
+      return res.status(200).send({ user_id, room_id, action });
+    } catch (error) {
+      console.log(error);
       return res.status(500).send({ message: "An error occured" });
     }
   },
   getRoomParticipants: async (req, res, next) => {
-    const { user_id, room_id } = req.query;
+    const { room_id } = req.params;
+    const { user_id } = req.query;
     if (utils.checkUserRoom(user_id, room_id)) {
       return res.status(200).send({
         participants: await utils.getRoomParticipants(user_id, room_id),

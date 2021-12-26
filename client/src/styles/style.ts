@@ -40,9 +40,9 @@ export default css`
       height: 100%;
       &.home-wrapper {
         flex-direction: column;
-        justify-content: center;
         align-items: center;
         > .form-wrapper {
+          transform: translateY(50%);
           display: block;
           width: 450px;
           height: 300px;

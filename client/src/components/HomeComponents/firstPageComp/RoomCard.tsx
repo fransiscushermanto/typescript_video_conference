@@ -2,6 +2,8 @@ import { css, cx } from "@emotion/css";
 import React from "react";
 import { useHistory } from "react-router";
 import { RoomStatus } from "../../api-hooks/type";
+import KebabMenuSVG from "../../../assets/kebab-menu.svg";
+import * as Popover from "@radix-ui/react-popover";
 
 interface IRoomCard {
   room: {
@@ -15,6 +17,7 @@ interface IRoomCard {
 
 const styled = {
   card: css`
+    position: relative;
     cursor: pointer;
     width: 300px;
     height: 300px;
@@ -49,6 +52,37 @@ const styled = {
       opacity: 0.5;
       cursor: default;
     }
+
+    .menu {
+      position: absolute;
+      top: 0;
+      right: 0;
+
+      padding: 0;
+      margin-top: 0.625rem;
+      margin-right: 0.625rem;
+
+      background-color: transparent;
+      border: none;
+      .icon {
+        transform: rotate(90deg);
+      }
+    }
+  `,
+  menuDropdown: css`
+    background-color: white;
+    left: 0;
+
+    box-shadow: 0px 2px 4px 1px rgba(0, 0, 0, 0.3);
+    .menu {
+      cursor: pointer;
+      user-select: none;
+      padding: 0.5rem 1.25rem;
+      transition: background-color 0.2s ease-in-out;
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+    }
   `,
 };
 
@@ -68,11 +102,24 @@ function RoomCard({ room }: IRoomCard) {
     }
   }
 
-  function getRandomColor() {
+  const menus = React.useMemo(
+    () => [
+      {
+        name: "Delete",
+        action: (e) => {
+          e.stopPropagation();
+          console.log("delete");
+        },
+      },
+    ],
+    [],
+  );
+
+  const getRandomColor = React.useMemo(() => {
     const color = ["#C6D57E", "#D57E7E", "#A2CDCD", "#FFE1AF"];
 
     return color[Math.floor(Math.random() * color.length)];
-  }
+  }, []);
 
   return (
     <div
@@ -82,7 +129,24 @@ function RoomCard({ room }: IRoomCard) {
       className={cx(styled.card, { disabled: status !== RoomStatus.ACCEPTED })}
       title={status === RoomStatus.PENDING ? status : ""}
     >
-      <div style={{ backgroundColor: getRandomColor() }} className="initial">
+      <Popover.Root>
+        <Popover.Trigger asChild>
+          <button className="menu" onClick={(e) => e.stopPropagation()}>
+            <img src={KebabMenuSVG} className="icon" alt="icon" />
+          </button>
+        </Popover.Trigger>
+        <Popover.Content align="start" sideOffset={10}>
+          <ul className={styled.menuDropdown}>
+            {menus.map(({ name, action }) => (
+              <li className="menu" onClick={action}>
+                {name}
+              </li>
+            ))}
+          </ul>
+        </Popover.Content>
+      </Popover.Root>
+
+      <div style={{ backgroundColor: getRandomColor }} className="initial">
         <span>{getInitialRoomName()}</span>
       </div>
       <div className="name">

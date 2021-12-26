@@ -96,6 +96,18 @@ class Firebase {
     );
   }
 
+  getRoomParticipants(
+    room_id,
+    { onError, onNext, onCompletion }: IFirestoreOnSnapshotArguments,
+  ) {
+    return onSnapshot(
+      doc(this.firestore, Collections.rooms, room_id),
+      onNext,
+      onError,
+      onCompletion,
+    );
+  }
+
   async getRoom(room_id: string) {
     try {
       const docRef = doc(this.firestore, Collections.rooms, room_id);

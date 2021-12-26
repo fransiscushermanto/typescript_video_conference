@@ -39,7 +39,7 @@ export default (OriginalComponent) => {
           case "room":
             if (me) {
               try {
-                await axios.post("/users/check-room", {
+                await axios.post("/users/verify-room", {
                   user_id: me.user_id,
                   room_id,
                 });
