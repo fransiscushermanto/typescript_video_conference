@@ -32,7 +32,7 @@ export function useGetRooms(
   const { refetch, ...resProps } = useQuery<{ rooms: RoomModel[] }, any>(
     "rooms",
     async () => {
-      const res = await axios.get(`/${me.user_id}/rooms`);
+      const res = await axios.get(`/${me?.user_id}/rooms`);
       return res.data;
     },
     {

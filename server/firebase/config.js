@@ -48,7 +48,7 @@ class FirebaseAdmin {
       .collection(collections.user_rooms)
       .doc(user_id)
       .get();
-    return res.data().rooms;
+    return res.data()?.rooms;
   }
 
   async getRoom(room_id) {
@@ -122,13 +122,8 @@ class FirebaseAdmin {
    */
   async getRooms(user_id) {
     if (user_id) {
-      const user_rooms = await this.firestore
-        .collection(collections.user_rooms)
-        .doc(user_id)
-        .get()
-        .then((res) => {
-          return res.data() ? res.data().rooms : [];
-        });
+      const user_rooms = await this.getUserRooms(user_id);
+
       if (user_rooms && user_rooms.length > 0) {
         const rooms = user_rooms
           .filter(({ status }) => status !== RoomStatus.DECLINED)
@@ -219,7 +214,6 @@ class FirebaseAdmin {
           .doc(room_id)
           .set({ users: [payload.user_id] });
       }
-
       if (user_rooms) {
         await this.firestore
           .collection(collections.user_rooms)
