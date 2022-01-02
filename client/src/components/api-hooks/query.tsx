@@ -23,16 +23,16 @@ interface Participant {
 }
 
 export function useGetRooms(
-  user_id: string,
   options: UseQueryOptions<{ rooms: RoomModel[] }, any> = {},
 ) {
+  const [me] = useMe();
   const [rooms, setRooms] = useState<RoomModel[]>([]);
   const firebase = useFirebase();
   const [messages, setMessages] = useContext(MessageContext);
   const { refetch, ...resProps } = useQuery<{ rooms: RoomModel[] }, any>(
     "rooms",
     async () => {
-      const res = await axios.get(`/rooms/${user_id}`);
+      const res = await axios.get(`/${me.user_id}/rooms`);
       return res.data;
     },
     {
@@ -55,8 +55,8 @@ export function useGetRooms(
   );
 
   useEffect(() => {
-    if (user_id) {
-      firebase.getRooms(user_id, {
+    if (me?.user_id) {
+      firebase.getRooms(me.user_id, {
         onNext: async (data) => {
           if (data.data()) {
             refetch();
@@ -66,12 +66,12 @@ export function useGetRooms(
     }
 
     return () => {
-      if (user_id) {
-        const unsub = firebase.getRooms(user_id, { onNext: () => {} });
+      if (me?.user_id) {
+        const unsub = firebase.getRooms(me.user_id, { onNext: () => {} });
         unsub();
       }
     };
-  }, [user_id]);
+  }, [me]);
 
   return { rooms, refetch, ...resProps };
 }

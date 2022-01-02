@@ -66,7 +66,10 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
   }>({
     "waiting-room": false,
   });
-  const { usersInWaitingRoom } = useGetUsersInWaitingRoom(room_id);
+  const { usersInWaitingRoom } = useGetUsersInWaitingRoom(room_id, {
+    enabled: true,
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     setIsNewNotification({

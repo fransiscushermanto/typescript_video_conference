@@ -83,3 +83,24 @@ export function useUpdateUsersInWaitingRoom(
     options,
   );
 }
+
+export function useDeleteRoom(
+  options: UseMutationOptions<
+    any,
+    any,
+    { room_id: string; user_id: string }
+  > = {},
+) {
+  return useMutation<any, any, { room_id: string; user_id: string }>(
+    "delete_room",
+    async ({ room_id, user_id }) => {
+      const res = await axios.delete(`/rooms/${room_id}`, {
+        params: {
+          user_id,
+        },
+      });
+      return res.data;
+    },
+    options,
+  );
+}

@@ -9,6 +9,7 @@ import NotFound from "../NotFound";
 import { MessageContext } from "../Providers/MessageProvider";
 import { Severities } from "../CustomSnackbar";
 import { useMe, useRoom } from "../../hooks";
+import { useGetRooms } from "../api-hooks";
 
 interface Props extends RouteComponentProps {
   history: H.History<H.LocationState>;
@@ -17,12 +18,11 @@ interface Props extends RouteComponentProps {
 export default (OriginalComponent) => {
   const MixedComponent: React.FC<Props> = (props) => {
     const { path } = useRouteMatch();
-    const { roomState } = useRoom();
+    const { rooms } = useGetRooms();
     const { socket } = useContext(SocketContext);
     const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
     const { history } = props;
 
-    const [room, setRoom] = roomState;
     const [me, setMe] = useMe();
     const [isReady, setIsReady] = useState<boolean>(false);
     const [error, setError] = useState<boolean>(false);
@@ -62,7 +62,7 @@ export default (OriginalComponent) => {
             break;
         }
       })();
-    }, [meeting_id, me, history, room_id, filterPath]);
+    }, [meeting_id, me, history, room_id, filterPath, rooms]);
 
     if (!isReady) {
       return <></>;

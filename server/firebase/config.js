@@ -48,7 +48,7 @@ class FirebaseAdmin {
       .collection(collections.user_rooms)
       .doc(user_id)
       .get();
-    return res.data();
+    return res.data().rooms;
   }
 
   async getRoom(room_id) {
@@ -147,21 +147,20 @@ class FirebaseAdmin {
     return [];
   }
 
+  async getRoomParticipant(user_id, room_id) {
+    const room_data = await this.getRoom(room_id);
+
+    const participant = room_data.room_participants.find(
+      (participant) => participant.user_id === user_id,
+    );
+    return participant;
+  }
+
   async getRoomParticipants(user_id, room_id) {
     if (user_id && room_id) {
       const room_data = await this.getRoom(room_id);
 
-      const participants = room_data.room_participants.map(
-        async (participant) => {
-          const userData = await this.getUser(participant.user_id);
-          return {
-            ...participant,
-            user_name: userData.displayName,
-          };
-        },
-      );
-
-      return await Promise.all(participants);
+      return room_data.room_participants;
     }
 
     return [];
@@ -221,15 +220,12 @@ class FirebaseAdmin {
           .set({ users: [payload.user_id] });
       }
 
-      if (user_rooms && user_rooms.rooms) {
+      if (user_rooms) {
         await this.firestore
           .collection(collections.user_rooms)
           .doc(payload.user_id)
           .update({
-            rooms: [
-              ...user_rooms.rooms,
-              { room_id, status: RoomStatus.PENDING },
-            ],
+            rooms: [...user_rooms, { room_id, status: RoomStatus.PENDING }],
           });
       } else {
         await this.firestore
@@ -273,7 +269,7 @@ class FirebaseAdmin {
   }
 
   async acceptUserToRoom(room_id, user_id) {
-    const { rooms } = await this.getUserRooms(user_id);
+    const rooms = await this.getUserRooms(user_id);
     const { users } = await this.getWaitingRoomUser(room_id);
     const userData = await this.getUser(user_id);
     const participants = await this.getRoomParticipants(user_id, room_id);
@@ -306,10 +302,101 @@ class FirebaseAdmin {
             {
               role: ParticipantType.PARTICIPANT,
               user_id,
-              user_name: userData.displayName,
             },
           ],
         });
+      resolve(true);
+    });
+  }
+
+  async deleteRoom(room_id, user_id) {
+    return new Promise(async (resolve) => {
+      const user = await this.getRoomParticipant(user_id, room_id);
+      if (user && user.role === ParticipantType.HOST) {
+        let participantIndex = 0,
+          waitingParticipantIndex = 0;
+        let participants = await this.getRoomParticipants(user_id, room_id);
+        participants = participants.filter(
+          (participant) => participant.user_id !== user_id,
+        );
+        let waitingParticipants = await this.getUsersInWaitingRoom(room_id);
+        for (var participant of participants) {
+          const prevRooms = await this.getUserRooms(participant.user_id);
+          await this.firestore
+            .collection(collections.user_rooms)
+            .doc(participant.user_id)
+            .update({
+              rooms: prevRooms.filter((room) => room.room_id !== room_id),
+            });
+          participantIndex += 1;
+        }
+
+        for (var waitingParticipant of waitingParticipants) {
+          const prevRooms = await this.getUserRooms(waitingParticipant.user_id);
+          await this.firestore
+            .collection(collections.user_rooms)
+            .doc(waitingParticipant.user_id)
+            .update({
+              rooms: prevRooms.filter((room) => room.room_id !== room_id),
+            });
+          waitingParticipantIndex += 1;
+        }
+
+        if (
+          participantIndex === participants.length &&
+          waitingParticipantIndex === waitingParticipants.length
+        ) {
+          const prevRooms = await this.getUserRooms(user_id);
+          await this.firestore
+            .collection(collections.user_rooms)
+            .doc(user_id)
+            .update({
+              rooms: prevRooms.filter((room) => room.room_id !== room_id),
+            });
+          await this.firestore
+            .collection(collections.waiting_room)
+            .doc(room_id)
+            .delete();
+
+          await this.firestore
+            .collection(collections.rooms)
+            .doc(room_id)
+            .delete();
+        }
+      } else {
+        let userRoom = await this.getUserRooms(user_id);
+        userRoom = userRoom.find((room) => room.room_id === room_id);
+        if (userRoom.status === RoomStatus.PENDING) {
+          const waitingParticipant = await this.getUsersInWaitingRoom(room_id);
+          this.firestore
+            .collection(collections.waiting_room)
+            .doc(room_id)
+            .update({
+              users: waitingParticipant
+                .filter((participant) => participant.user_id !== user_id)
+                .map((participant) => participant.user_id),
+            });
+        } else {
+          const participants = await this.getRoomParticipants(user_id, room_id);
+          this.firestore
+            .collection(collections.rooms)
+            .doc(room_id)
+            .update({
+              room_participants: participants.filter(
+                (participant) => participant.user_id !== user_id,
+              ),
+            });
+        }
+
+        const prevRooms = await this.getUserRooms(user_id);
+        await this.firestore
+          .collection(collections.user_rooms)
+          .doc(user_id)
+          .update({
+            rooms: prevRooms.filter((room) => room.room_id !== room_id),
+          });
+      }
+
       resolve(true);
     });
   }

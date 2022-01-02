@@ -36,16 +36,6 @@ const JoinPage: React.FC<Props> = ({
         });
       }
     },
-    onError: ({ response: { data } }) => {
-      setMessages([
-        ...messages,
-        {
-          id: Date.now(),
-          message: data.message,
-          severity: Severities.ERROR,
-        },
-      ]);
-    },
   });
 
   const { mutateAsync: mutateAsyncJoinRoom } = useJoinRoom({

@@ -4,6 +4,8 @@ import { useHistory } from "react-router";
 import { RoomStatus } from "../../api-hooks/type";
 import KebabMenuSVG from "../../../assets/kebab-menu.svg";
 import * as Popover from "@radix-ui/react-popover";
+import { useDeleteRoom } from "./../../api-hooks/mutation";
+import useMe from "./../../../hooks/use-me";
 
 interface IRoomCard {
   room: {
@@ -88,7 +90,9 @@ const styled = {
 
 function RoomCard({ room }: IRoomCard) {
   const { room_name, room_id, status } = room;
+  const [me] = useMe();
   const history = useHistory();
+  const { mutate: mutateDeleteRoom } = useDeleteRoom();
 
   function getInitialRoomName() {
     const arrStr = String(room_name).split(" ");
@@ -108,7 +112,7 @@ function RoomCard({ room }: IRoomCard) {
         name: "Delete",
         action: (e) => {
           e.stopPropagation();
-          console.log("delete");
+          mutateDeleteRoom({ room_id, user_id: me.user_id });
         },
       },
     ],
@@ -137,8 +141,8 @@ function RoomCard({ room }: IRoomCard) {
         </Popover.Trigger>
         <Popover.Content align="start" sideOffset={10}>
           <ul className={styled.menuDropdown}>
-            {menus.map(({ name, action }) => (
-              <li className="menu" onClick={action}>
+            {menus.map(({ name, action }, i) => (
+              <li key={i} className="menu" onClick={action}>
                 {name}
               </li>
             ))}

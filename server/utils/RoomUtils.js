@@ -73,6 +73,10 @@ const getRooms = async (user_id) => {
   return await admin.getRooms(user_id);
 };
 
+async function deleteRoom(room_id, user_id) {
+  return await admin.deleteRoom(room_id, user_id);
+}
+
 /**
  *
  * @param {string} user_id
@@ -84,7 +88,17 @@ const checkUserRoom = async (user_id, room_id) => {
 };
 
 const getRoomParticipants = async (user_id, room_id) => {
-  return await admin.getRoomParticipants(user_id, room_id);
+  const room_participants = await admin.getRoomParticipants(user_id, room_id);
+
+  const participants = room_participants.map(async (participant) => {
+    const userData = await admin.getUser(participant.user_id);
+    return {
+      ...participant,
+      user_name: userData.displayName,
+    };
+  });
+
+  return await Promise.all(participants);
 };
 
 const checkRoom = async (room_id) => {
@@ -416,4 +430,5 @@ module.exports = {
   getUser,
   getUsersInWaitingRoom,
   updateUsersInWaitingRoom,
+  deleteRoom,
 };

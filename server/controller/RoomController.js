@@ -27,6 +27,16 @@ module.exports = {
       rooms: await utils.getRooms(user_id),
     });
   },
+  deleteRoom: async (req, res, next) => {
+    const { room_id } = req.params;
+    const { user_id } = req.query;
+    try {
+      await utils.deleteRoom(room_id, user_id);
+      return res.status(200).send({ room_id, user_id });
+    } catch (error) {
+      return res.send(error);
+    }
+  },
   getUserInfo: async (req, res, next) => {
     const { user_id } = req.body;
     try {
