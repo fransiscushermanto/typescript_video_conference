@@ -141,9 +141,12 @@ export function useGetUsersInWaitingRoom(
 }
 
 export function useGetRoomParticipants(
-  options: UseQueryOptions<{ participants: Participant[] }, any> = {},
+  options: UseQueryOptions<{ participants: Participant[] }, any> & {
+    room_id?: string;
+  } = {},
 ) {
-  const { room_id } = useParams<{ room_id }>();
+  const { room_id: roomIdParam } = useParams<{ room_id }>();
+  const [room_id] = useState(roomIdParam || options.room_id);
   const [me] = useMe();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useContext(MessageContext);

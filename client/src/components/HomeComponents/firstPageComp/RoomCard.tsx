@@ -1,11 +1,12 @@
 import { css, cx } from "@emotion/css";
 import React from "react";
 import { useHistory } from "react-router";
-import { RoomStatus } from "../../api-hooks/type";
+import { ParticipantType, RoomStatus } from "../../api-hooks/type";
 import KebabMenuSVG from "../../../assets/kebab-menu.svg";
 import * as Popover from "@radix-ui/react-popover";
 import { useDeleteRoom } from "./../../api-hooks/mutation";
 import useMe from "./../../../hooks/use-me";
+import { useGetRoomParticipants } from "../../api-hooks";
 
 interface IRoomCard {
   room: {
@@ -92,6 +93,7 @@ function RoomCard({ room }: IRoomCard) {
   const { room_name, room_id, status } = room;
   const [me] = useMe();
   const history = useHistory();
+  const { participants } = useGetRoomParticipants({ room_id });
   const { mutate: mutateDeleteRoom } = useDeleteRoom();
 
   function getInitialRoomName() {
@@ -106,17 +108,22 @@ function RoomCard({ room }: IRoomCard) {
     }
   }
 
+  const isHost =
+    participants.some((participant) => participant.user_id === me?.user_id) &&
+    participants.find((participant) => participant.user_id).role ===
+      ParticipantType.HOST;
+
   const menus = React.useMemo(
     () => [
       {
-        name: "Delete",
+        name: isHost ? "Delete" : "Leave",
         action: (e) => {
           e.stopPropagation();
           mutateDeleteRoom({ room_id, user_id: me.user_id });
         },
       },
     ],
-    [],
+    [isHost],
   );
 
   const getRandomColor = React.useMemo(() => {

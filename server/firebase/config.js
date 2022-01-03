@@ -59,12 +59,12 @@ class FirebaseAdmin {
     return res.data();
   }
 
-  async getWaitingRoomUser(room_id) {
+  async getWaitingRoomUsers(room_id) {
     const res = await this.firestore
       .collection(collections.waiting_room)
       .doc(room_id)
       .get();
-    return res.data();
+    return res.data().users;
   }
 
   async getExistWaitingRoom(room_id) {
@@ -242,10 +242,8 @@ class FirebaseAdmin {
   }
 
   async getUsersInWaitingRoom(room_id) {
-    const data = await this.getWaitingRoomUser(room_id);
-    if (data) {
-      const users = data.users;
-
+    const users = await this.getWaitingRoomUsers(room_id);
+    if (users) {
       return await Promise.all(
         users
           ? users.map(async (user_id) => {
@@ -264,8 +262,7 @@ class FirebaseAdmin {
 
   async acceptUserToRoom(room_id, user_id) {
     const rooms = await this.getUserRooms(user_id);
-    const { users } = await this.getWaitingRoomUser(room_id);
-    const userData = await this.getUser(user_id);
+    const users = await this.getWaitingRoomUsers(room_id);
     const participants = await this.getRoomParticipants(user_id, room_id);
 
     return new Promise((resolve) => {
@@ -298,6 +295,29 @@ class FirebaseAdmin {
               user_id,
             },
           ],
+        });
+      resolve(true);
+    });
+  }
+
+  async rejectUserToRoom(room_id, user_id) {
+    return new Promise(async (resolve) => {
+      const userRooms = await this.getUserRooms(user_id);
+      const waitingUsers = await this.getWaitingRoomUsers(room_id);
+
+      this.firestore
+        .collection(collections.waiting_room)
+        .doc(room_id)
+        .update({
+          users: waitingUsers.filter(
+            (waitingUserId) => waitingUserId !== user_id,
+          ),
+        });
+      this.firestore
+        .collection(collections.user_rooms)
+        .doc(user_id)
+        .update({
+          rooms: userRooms.filter((room) => room.room_id !== room_id),
         });
       resolve(true);
     });
