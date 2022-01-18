@@ -3,6 +3,7 @@ import { Route, useLocation, useParams, useRouteMatch } from "react-router";
 import { useMe } from "../../hooks";
 import { useGetRoomParticipants } from "../api-hooks";
 import NotFound from "../NotFound";
+import { RTCProvider } from "../Providers/RTCProvider";
 import { menus } from "./constants";
 import Content from "./Content";
 import SidebarRoom from "./SidebarRoom";
@@ -30,11 +31,13 @@ function Room() {
   if (!menus.some(({ name }) => name === activeMenu)) return <NotFound />;
 
   return (
-    <div className={styled.root}>
-      <SidebarRoom activeMenu={activeMenu} />
-      <Route exact path={`${path}/`} component={Content} />
-      <Route path={`${path}/:menu`} component={Content} />
-    </div>
+    <RTCProvider>
+      <div className={styled.root}>
+        <SidebarRoom activeMenu={activeMenu} />
+        <Route exact path={`${path}/`} component={Content} />
+        <Route path={`${path}/:menu`} component={Content} />
+      </div>
+    </RTCProvider>
   );
 }
 

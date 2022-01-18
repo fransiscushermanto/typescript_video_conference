@@ -2,9 +2,12 @@ import { css } from "@emotion/css";
 import { useHistory, useParams } from "react-router";
 import Participant from "./participants/Participant";
 import WaitingRoom from "./waitingRoom/WaitingRoom";
+import Home from "./home/Home";
 
 const styled = {
   root: css`
+    position: relative;
+
     flex: 1;
     width: 100%;
     padding: 2.5rem;
@@ -19,7 +22,7 @@ function Content() {
 
   function renderContent() {
     if (!menu) {
-      return <div style={{ color: "white" }}>Home</div>;
+      return <Home />;
     }
 
     switch (menu) {

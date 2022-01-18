@@ -104,3 +104,16 @@ export function useDeleteRoom(
     options,
   );
 }
+
+export function useCreateRoomMeeting(
+  options: UseMutationOptions<
+    any,
+    any,
+    {
+      room_id: string;
+      room_name: string;
+      offer_candidates: string;
+      answer_candidates: string;
+    }
+  >,
+) {}

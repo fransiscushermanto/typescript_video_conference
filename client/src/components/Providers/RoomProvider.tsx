@@ -50,7 +50,7 @@ interface ContextType {
   meState: [UserModel, React.Dispatch<React.SetStateAction<UserModel>>];
   streamState: [
     MediaStream | any | undefined,
-    React.Dispatch<React.SetStateAction<MediaStream>>,
+    React.Dispatch<React.SetStateAction<MediaStream[]>>,
   ];
   myVideoRef: any;
   participantVideoRef: any;
@@ -60,7 +60,7 @@ interface ContextType {
 const RoomContext = React.createContext<ContextType>({
   roomState: [{} as RoomModel, () => {}],
   meState: [{} as UserModel, () => {}],
-  streamState: [{}, () => {}],
+  streamState: [[], () => {}],
   myVideoRef: null,
   participantVideoRef: null,
   callState: [{}, () => {}],
@@ -72,7 +72,7 @@ const RoomProvider: React.FC<Props> = ({ children }) => {
   );
 
   const [me, setMe] = useState<UserModel>();
-  const [stream, setStream] = useState<MediaStream>();
+  const [stream, setStream] = useState<MediaStream[]>();
   const [call, setCall] = useState<CallModel>();
 
   const myVideoRef = useRef<any>(null);

@@ -25,7 +25,6 @@ const styled = {
     display: flex;
     flex-direction: row;
     height: 70px;
-    background-color: transparent !important;
     padding: 0.625rem 2.5rem;
     margin-bottom: 1.25rem;
   `,

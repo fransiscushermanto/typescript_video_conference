@@ -105,7 +105,7 @@ export default css`
     }
     header {
       height: auto;
-      background-color: rgba(0, 0, 0, 0.5);
+      /* background-color: rgba(0, 0, 0, 0.5); */
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -170,6 +170,61 @@ export default css`
           }
         }
       }
+    }
+  }
+
+  .modal-backdrop {
+    color: black;
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    height: 100%;
+    width: 100%;
+
+    background-color: rgba(0, 0, 0, 0.5);
+
+    .modal-content {
+      background-color: rgb(255, 255, 255);
+      border-radius: 10px;
+
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+
+      .modal-header {
+        align-items: center;
+        border-bottom: none;
+        .title {
+          font-weight: bold;
+          font-size: 20px;
+        }
+        .close {
+          display: flex;
+          align-items: center;
+
+          padding: unset;
+          margin: unset;
+
+          cursor: pointer;
+        }
+      }
+
+      .modal-body {
+        display: flex;
+        height: 100%;
+        width: 100%;
+      }
+    }
+  }
+
+  .form-group {
+    label {
+      font-size: 0.875rem;
+      font-weight: bold;
+    }
+    .error {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
     }
   }
 

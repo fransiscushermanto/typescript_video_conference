@@ -22,7 +22,9 @@ class CreatePage extends Component<Props> {
               type="text"
               name="room_name"
             />
-            <span className="error">{errors?.room_name?.message}</span>
+            <div className="error">
+              <span>{errors?.room_name?.message}</span>
+            </div>
           </div>
           <button
             className="btn btn-success mb-1"

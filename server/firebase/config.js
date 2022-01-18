@@ -1,4 +1,5 @@
 require("dotenv").config();
+const uuid = require("react-uuid");
 const admin = require("firebase-admin");
 const collections = require("./collections");
 const ParticipantType = require("../utils/types");
@@ -59,12 +60,20 @@ class FirebaseAdmin {
     return res.data();
   }
 
+  async getRoomMeetings(room_id) {
+    const res = await this.firestore
+      .collection(collections.room_meetings)
+      .doc(room_id)
+      .get();
+    return res.data();
+  }
+
   async getWaitingRoomUsers(room_id) {
     const res = await this.firestore
       .collection(collections.waiting_room)
       .doc(room_id)
       .get();
-    return res.data().users;
+    return res.data()?.users;
   }
 
   async getExistWaitingRoom(room_id) {
@@ -413,6 +422,16 @@ class FirebaseAdmin {
 
       resolve(true);
     });
+  }
+
+  async createMeeting(
+    room_id,
+    meeting_name,
+    offer_candidates,
+    answer_candidates,
+  ) {
+    const prevRoomMeetings = await this.getRoomMeetings(room_id);
+    console.log(prevRoomMeetings);
   }
 }
 

@@ -70,7 +70,9 @@ const JoinPage: React.FC<Props> = ({
             name="room_id"
             ref={register}
           />
-          <span className="error">{errors?.room_id?.message}</span>
+          <div className="error">
+            <span>{errors?.room_id?.message}</span>
+          </div>
         </div>
         <button className="btn btn-success mb-1" type="submit">
           Join
