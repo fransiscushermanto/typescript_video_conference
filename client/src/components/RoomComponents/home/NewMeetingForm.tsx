@@ -4,6 +4,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useParams } from "react-router-dom";
 import { useRTC } from "../../../hooks";
+import { useCreateRoomMeeting } from "../../api-hooks";
 
 interface IProps {
   handleCloseModal: (e?: any) => void;
@@ -43,11 +44,30 @@ function NewMeetingForm({ handleCloseModal }: IProps) {
     ),
   });
 
-  function onSubmit(data) {
-    console.log(data, room_id);
-  }
+  const { mutate } = useCreateRoomMeeting({
+    onSuccess: (data) => {
+      console.log(data);
+    },
+  });
 
-  console.log(pc);
+  async function onSubmit(formData) {
+    // pc.onicecandidate = (e) => {
+    //   console.log("onicecandidate", e);
+    // };
+
+    const offerDescription = await pc.createOffer();
+    await pc.setLocalDescription(offerDescription);
+    const offer = {
+      sdp: offerDescription.sdp,
+      type: offerDescription.type,
+    };
+
+    mutate({
+      room_id,
+      ...formData,
+      offer,
+    });
+  }
 
   return (
     <form className={styled.root} onSubmit={handleSubmit(onSubmit)}>

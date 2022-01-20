@@ -12,7 +12,10 @@ import {
   getDocs,
   DocumentSnapshot,
   DocumentData,
+  query,
+  onSnapshotsInSync,
   FirestoreError,
+  QuerySnapshot,
 } from "firebase/firestore";
 import "firebase/database";
 import {
@@ -33,9 +36,9 @@ var config = {
 };
 
 export interface IFirestoreOnSnapshotArguments {
-  onNext: (snapshot: DocumentSnapshot<DocumentData>) => void;
-  onError?: (error: FirestoreError) => void;
-  onCompletion?: () => void;
+  next?: (snapshot: QuerySnapshot<DocumentData>) => void;
+  error?: (error: FirestoreError) => void;
+  complete?: () => void;
 }
 
 const provider: GoogleAuthProvider = new GoogleAuthProvider();
@@ -72,39 +75,17 @@ class Firebase {
     return this.auth.signOut();
   }
 
-  getRooms(
-    user_id: string,
-    { onError, onNext, onCompletion }: IFirestoreOnSnapshotArguments,
-  ) {
+  getRoomParticipants(observer: IFirestoreOnSnapshotArguments) {
     return onSnapshot(
-      doc(this.firestore, Collections.user_rooms, user_id),
-      onNext,
-      onError,
-      onCompletion,
+      query(collection(this.firestore, Collections.rooms)),
+      observer,
     );
   }
 
-  getUserInWaitingRoom(
-    room_id: string,
-    { onError, onNext, onCompletion }: IFirestoreOnSnapshotArguments,
-  ) {
+  getRoomMeetings(observer: IFirestoreOnSnapshotArguments) {
     return onSnapshot(
-      doc(this.firestore, Collections.waiting_room, room_id),
-      onNext,
-      onError,
-      onCompletion,
-    );
-  }
-
-  getRoomParticipants(
-    room_id,
-    { onError, onNext, onCompletion }: IFirestoreOnSnapshotArguments,
-  ) {
-    return onSnapshot(
-      doc(this.firestore, Collections.rooms, room_id),
-      onNext,
-      onError,
-      onCompletion,
+      query(collection(this.firestore, Collections.room_meetings)),
+      observer,
     );
   }
 

@@ -1,6 +1,7 @@
 require("express");
 const router = require("express-promise-router")();
 const RoomController = require("../controller/RoomController");
+const MeetingController = require("../controller/MeetingController");
 
 router.route("/rooms/create").post(RoomController.createRoom);
 router.route("/rooms/join").post(RoomController.joinRoom);
@@ -24,4 +25,6 @@ router.route("/users/info").post(RoomController.getUserInfo);
 router.route("/updateRoom").post(RoomController.updateRoom);
 router.route("/flushRoom").get(RoomController.flushRoom);
 
+router.route("/meetings/create").post(MeetingController.createMeeting);
+router.route("/meetings/:room_id").get(MeetingController.getRoomMeetings);
 module.exports = router;

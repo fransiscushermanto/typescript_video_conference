@@ -1,5 +1,5 @@
 require("dotenv").config();
-const uuid = require("react-uuid");
+const uuid = require("uuid");
 const admin = require("firebase-admin");
 const collections = require("./collections");
 const ParticipantType = require("../utils/types");
@@ -424,14 +424,32 @@ class FirebaseAdmin {
     });
   }
 
-  async createMeeting(
-    room_id,
-    meeting_name,
-    offer_candidates,
-    answer_candidates,
-  ) {
-    const prevRoomMeetings = await this.getRoomMeetings(room_id);
-    console.log(prevRoomMeetings);
+  async createMeeting(room_id, meeting_name, offer) {
+    return new Promise(async (resolve) => {
+      const prevRoomMeetings = await this.getRoomMeetings(room_id);
+      const roomMeetingsDoc = this.firestore
+        .collection(collections.room_meetings)
+        .doc(room_id);
+      const meetingID = uuid.v4();
+
+      if (prevRoomMeetings) {
+        roomMeetingsDoc.update({
+          [meetingID]: {
+            offer,
+            meeting_name,
+          },
+        });
+      } else {
+        roomMeetingsDoc.set({
+          [meetingID]: {
+            offer,
+            meeting_name,
+          },
+        });
+      }
+
+      resolve(true);
+    });
   }
 }
 

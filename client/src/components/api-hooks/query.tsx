@@ -1,4 +1,8 @@
-import { DocumentData, DocumentSnapshot } from "firebase/firestore";
+import {
+  DocumentData,
+  DocumentSnapshot,
+  QuerySnapshot,
+} from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import { useQuery, UseQueryOptions } from "react-query";
 import { useParams } from "react-router-dom";
@@ -10,6 +14,7 @@ import { MessageContext } from "../Providers/MessageProvider";
 import {
   ParticipantType,
   QueryOptions,
+  RoomMeetingModel,
   RoomModel,
   RoomStatus,
   UserInfoModel,
@@ -54,24 +59,24 @@ export function useGetRooms(
     },
   );
 
-  useEffect(() => {
-    if (me?.user_id) {
-      firebase.getRooms(me.user_id, {
-        onNext: async (data) => {
-          if (data.data()) {
-            refetch();
-          }
-        },
-      });
-    }
+  // useEffect(() => {
+  //   if (me?.user_id) {
+  //     firebase.getRooms(me.user_id, {
+  //       onNext: async (data) => {
+  //         if (data.data()) {
+  //           refetch();
+  //         }
+  //       },
+  //     });
+  //   }
 
-    return () => {
-      if (me?.user_id) {
-        const unsub = firebase.getRooms(me.user_id, { onNext: () => {} });
-        unsub();
-      }
-    };
-  }, [me]);
+  //   return () => {
+  //     if (me?.user_id) {
+  //       const unsub = firebase.getRooms(me.user_id, { onNext: () => {} });
+  //       unsub();
+  //     }
+  //   };
+  // }, [me]);
 
   return { rooms, refetch, ...resProps };
 }
@@ -114,28 +119,28 @@ export function useGetUsersInWaitingRoom(
     },
   );
 
-  useEffect(() => {
-    if (room_id) {
-      firebase.getUserInWaitingRoom(room_id, {
-        onNext: callAllFunctions(
-          async (data: DocumentSnapshot<DocumentData>) => {
-            if (data.data()) {
-              refetch();
-            }
-          },
-        ),
-      });
-    }
+  // useEffect(() => {
+  //   if (room_id) {
+  //     firebase.getUserInWaitingRoom(room_id, {
+  //       onNext: callAllFunctions(
+  //         async (data: DocumentSnapshot<DocumentData>) => {
+  //           if (data.data()) {
+  //             refetch();
+  //           }
+  //         },
+  //       ),
+  //     });
+  //   }
 
-    return () => {
-      if (room_id) {
-        const unsub = firebase.getUserInWaitingRoom(room_id, {
-          onNext: () => {},
-        });
-        unsub();
-      }
-    };
-  }, [room_id]);
+  //   return () => {
+  //     if (room_id) {
+  //       const unsub = firebase.getUserInWaitingRoom(room_id, {
+  //         onNext: () => {},
+  //       });
+  //       unsub();
+  //     }
+  //   };
+  // }, [room_id]);
 
   return { usersInWaitingRoom, refetch, ...resProps };
 }
@@ -146,7 +151,7 @@ export function useGetRoomParticipants(
   } = {},
 ) {
   const { room_id: roomIdParam } = useParams<{ room_id }>();
-  const [room_id] = useState(roomIdParam || options.room_id);
+  const room_id = roomIdParam || options.room_id;
   const [me] = useMe();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useContext(MessageContext);
@@ -185,25 +190,85 @@ export function useGetRoomParticipants(
 
   useEffect(() => {
     if (room_id) {
-      firebase.getRoomParticipants(room_id, {
-        onNext: callAllFunctions(
-          async (data: DocumentSnapshot<DocumentData>) => {
-            if (data.data()) {
-              refetch();
-            }
-          },
-        ),
+      firebase.getRoomParticipants({
+        next: async (data: QuerySnapshot<DocumentData>) => {
+          console.log(data);
+        },
       });
     }
 
     return () => {
       if (room_id) {
-        const unsub = firebase.getRoomParticipants(room_id, {
-          onNext: () => {},
+        const unsub = firebase.getRoomParticipants({
+          next: async (data: QuerySnapshot<DocumentData>) => {
+            console.log(data);
+          },
         });
         unsub();
       }
     };
   }, [room_id]);
   return { participants, refetch, ...resProps };
+}
+
+export function useGetRoomMeetings(
+  options: UseQueryOptions<{ room_meetings: RoomMeetingModel[] }, any> & {
+    room_id?: string;
+  } = {},
+) {
+  const firebase = useFirebase();
+  const [roomMeetings, setRoomMeetings] = useState<RoomMeetingModel[]>();
+  const { room_id: roomIdParam } = useParams<{ room_id }>();
+  const room_id = roomIdParam || options.room_id;
+  const [messages, setMessages] = useContext(MessageContext);
+  const { refetch, ...resProps } = useQuery<
+    { room_meetings: RoomMeetingModel[] },
+    any
+  >(
+    "room_meetings",
+    async () => {
+      const res = await axios.get(`/meetings/${room_id}`);
+      return res.data;
+    },
+    {
+      ...options,
+      enabled: options.enabled || false,
+      onSuccess: callAllFunctions((data) => {
+        setRoomMeetings(data?.room_meetings);
+      }, options.onSuccess),
+      onError: callAllFunctions(({ message }) => {
+        setMessages([
+          ...messages,
+          {
+            id: Date.now(),
+            message: message,
+            severity: Severities.ERROR,
+          },
+        ]);
+      }, options.onError),
+    },
+  );
+
+  useEffect(() => {
+    if (room_id) {
+      firebase.getRoomMeetings({
+        next: async (snapshot: QuerySnapshot<DocumentData>) => {
+          console.log(snapshot.docChanges);
+        },
+      });
+    }
+
+    return () => {
+      if (room_id) {
+        const unsub = firebase.getRoomMeetings({
+          next: async (snapshot: QuerySnapshot<DocumentData>) => {
+            console.log(snapshot.docChanges);
+          },
+        });
+        unsub();
+      }
+    };
+  }, [room_id]);
+
+  return { roomMeetings, refetch, ...resProps };
 }

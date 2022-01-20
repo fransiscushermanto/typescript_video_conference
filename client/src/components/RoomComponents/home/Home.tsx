@@ -1,5 +1,6 @@
 import { css } from "@emotion/css";
 import React, { useState } from "react";
+import { useGetRoomMeetings } from "../../api-hooks";
 import { Close } from "../../Shapes";
 import NewMeetingForm from "./NewMeetingForm";
 
@@ -32,6 +33,8 @@ const styled = {
 function Home() {
   const [openModal, setOpenModal] = useState(false);
 
+  const { roomMeetings } = useGetRoomMeetings({ enabled: true });
+
   function handleOpenModal() {
     setOpenModal(true);
   }
@@ -50,7 +53,17 @@ function Home() {
           New Meeting
         </button>
       </header>
-      <div className="meeting-list">Meeting List</div>
+      <div className="meeting-list">
+        <ul>
+          {roomMeetings &&
+            Object.entries(roomMeetings).map(([key, value]) => (
+              <li>
+                <div>id: {key}</div>
+                <div>name: {value?.meeting_name}</div>
+              </li>
+            ))}
+        </ul>
+      </div>
 
       {openModal && (
         <div className="create-meeting-modal modal-backdrop">

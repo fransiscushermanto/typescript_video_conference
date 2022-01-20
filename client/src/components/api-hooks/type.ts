@@ -33,3 +33,13 @@ export interface UserInfoModel
 export interface UserInWaitingRoomModel extends UserInfoModel {
   status: ParticipantType;
 }
+
+export interface PeerOfferModel {
+  type: RTCSdpType;
+  sdp: string;
+}
+
+export interface RoomMeetingModel {
+  offer: PeerOfferModel;
+  meeting_name: string;
+}

@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-const utils = require("../utils/RoomUtils");
+const utils = require("../utils/Utils");
 
 module.exports = {
   createRoom: async (req, res, next) => {
@@ -21,11 +21,16 @@ module.exports = {
   },
   getRooms: async (req, res, next) => {
     const { user_id } = req.params;
+    try {
+      const rooms = await utils.getRooms(user_id);
 
-    return res.status(200).send({
-      success: true,
-      rooms: await utils.getRooms(user_id),
-    });
+      return res.status(200).send({
+        success: true,
+        rooms,
+      });
+    } catch (error) {
+      return res.status(404).send({ message: "Not Found", error });
+    }
   },
   deleteRoom: async (req, res, next) => {
     const { room_id } = req.params;

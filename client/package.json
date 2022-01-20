@@ -38,7 +38,8 @@
     "socket.io-client": "^3.0.4",
     "styled-components": "^5.2.1",
     "web-vitals": "^0.2.4",
-    "yup": "^0.32.8"
+    "yup": "^0.32.8",
+    "firebase": "^9.6.3"
   },
   "scripts": {
     "start": "react-scripts start",

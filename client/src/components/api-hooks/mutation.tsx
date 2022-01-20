@@ -1,5 +1,6 @@
 import { useMutation, UseMutationOptions } from "react-query";
 import axios from "../../axios-instance";
+import { PeerOfferModel } from "./type";
 
 export function useCheckRoom(
   options: UseMutationOptions<any, any, { room_id }> = {},
@@ -111,9 +112,21 @@ export function useCreateRoomMeeting(
     any,
     {
       room_id: string;
-      room_name: string;
-      offer_candidates: string;
-      answer_candidates: string;
+      meeting_name: string;
+      offer: PeerOfferModel;
     }
-  >,
-) {}
+  > = {},
+) {
+  return useMutation<
+    any,
+    any,
+    { room_id: string; meeting_name: string; offer: PeerOfferModel }
+  >(
+    "create_meeting",
+    async (payload) => {
+      const res = await axios.post("/meetings/create", payload);
+      return res.data;
+    },
+    options,
+  );
+}

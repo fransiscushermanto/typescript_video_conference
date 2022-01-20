@@ -46,9 +46,10 @@ const styled = {
 
 function FirstPage(props: Props) {
   const { setCurrentPage } = props;
+  const [me] = useMe();
 
   const { rooms } = useGetRooms({
-    enabled: true,
+    enabled: !!me?.user_id,
     refetchOnWindowFocus: false,
   });
 
