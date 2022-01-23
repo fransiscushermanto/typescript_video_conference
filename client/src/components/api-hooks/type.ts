@@ -43,3 +43,8 @@ export interface RoomMeetingModel {
   offer: PeerOfferModel;
   meeting_name: string;
 }
+
+export interface RoomNotificationModel {
+  "waiting-room": boolean;
+  participants: boolean;
+}

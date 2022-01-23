@@ -7,6 +7,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { useDeleteRoom } from "./../../api-hooks/mutation";
 import useMe from "./../../../hooks/use-me";
 import { useGetRoomParticipants } from "../../api-hooks";
+import { useSocket } from "../../../hooks";
 
 interface IRoomCard {
   room: {
@@ -132,11 +133,15 @@ function RoomCard({ room }: IRoomCard) {
     return color[Math.floor(Math.random() * color.length)];
   }, []);
 
+  function onCardClick() {
+    if (status === RoomStatus.ACCEPTED) {
+      history.push(`/room/${room_id}`);
+    }
+  }
+
   return (
     <div
-      onClick={() =>
-        status === RoomStatus.ACCEPTED && history.push(`/room/${room_id}`)
-      }
+      onClick={onCardClick}
       className={cx(styled.card, { disabled: status !== RoomStatus.ACCEPTED })}
       title={status === RoomStatus.PENDING ? status : ""}
     >

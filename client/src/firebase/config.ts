@@ -75,14 +75,14 @@ class Firebase {
     return this.auth.signOut();
   }
 
-  getRoomParticipants(observer: IFirestoreOnSnapshotArguments) {
+  getRoomParticipants(observer?: IFirestoreOnSnapshotArguments) {
     return onSnapshot(
       query(collection(this.firestore, Collections.rooms)),
       observer,
     );
   }
 
-  getRoomMeetings(observer: IFirestoreOnSnapshotArguments) {
+  getRoomMeetings(observer?: IFirestoreOnSnapshotArguments) {
     return onSnapshot(
       query(collection(this.firestore, Collections.room_meetings)),
       observer,

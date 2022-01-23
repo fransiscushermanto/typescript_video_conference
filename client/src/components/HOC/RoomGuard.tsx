@@ -8,7 +8,7 @@ import { SocketContext } from "../Providers/SocketProvider";
 import NotFound from "../NotFound";
 import { MessageContext } from "../Providers/MessageProvider";
 import { Severities } from "../CustomSnackbar";
-import { useMe, useRoom } from "../../hooks";
+import { useMe, useRoom, useSocket } from "../../hooks";
 import { useGetRooms } from "../api-hooks";
 
 interface Props extends RouteComponentProps {
@@ -17,9 +17,9 @@ interface Props extends RouteComponentProps {
 
 export default (OriginalComponent) => {
   const MixedComponent: React.FC<Props> = (props) => {
+    const socket = useSocket();
     const { path } = useRouteMatch();
     const { rooms } = useGetRooms();
-    const { socket } = useContext(SocketContext);
     const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
     const { history } = props;
 
@@ -43,6 +43,10 @@ export default (OriginalComponent) => {
                   user_id: me.user_id,
                   room_id,
                 });
+                socket.on("connect", () => {
+                  socket?.emit("JOIN_ROOM", { room_id, me });
+                });
+                socket?.emit("JOIN_ROOM", { room_id, me });
                 setIsReady(true);
               } catch (error) {
                 if (error.response === undefined) {

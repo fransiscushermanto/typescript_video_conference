@@ -27,4 +27,8 @@ router.route("/flushRoom").get(RoomController.flushRoom);
 
 router.route("/meetings/create").post(MeetingController.createMeeting);
 router.route("/meetings/:room_id").get(MeetingController.getRoomMeetings);
+
+router
+  .route("/notifications/:user_id/rooms/:room_id")
+  .get(RoomController.getRoomNotifications);
 module.exports = router;

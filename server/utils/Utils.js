@@ -1,7 +1,11 @@
 require("fs");
-const { FirebaseAdmin } = require("../firebase/config");
-const admin = new FirebaseAdmin();
+const { admin } = require("../firebase/config");
+
 const ParticipantType = require("./types");
+const socket = require("../../index").io;
+const helper = require("./helper");
+
+const user_sockets = {};
 
 /**
  *
@@ -12,34 +16,34 @@ const getUser = async (user_id) => {
   return await admin.getUser(user_id);
 };
 
+const existRoom = async (room_id) => {
+  return await admin.existRoom(room_id);
+};
+
 /**
  * @param {Object} {room_host, room_name}
  */
 const createRoom = async ({ room_host, room_name }) => {
   let newRoom, room_id, room_password;
-  try {
-    do {
-      room_id = generate(10);
-      room_password = generate(10);
-    } while (existMeetingRoom(room_id));
 
-    newRoom = {
-      room_id,
-      room_host,
-      room_password,
-      room_name,
-      room_participants: [
-        {
-          user_id: room_host,
-          role: ParticipantType.HOST,
-        },
-      ],
-    };
-    await admin.createRoom(newRoom);
-    return { success: true, message: "Success created room" };
-  } catch (error) {
-    return { success: false, message: "There is an error occurred" };
-  }
+  do {
+    room_id = helper.generate(10);
+    room_password = helper.generate(10);
+  } while (await existRoom(room_id));
+
+  newRoom = {
+    room_id,
+    room_host,
+    room_password,
+    room_name,
+    room_participants: [
+      {
+        user_id: room_host,
+        role: ParticipantType.HOST,
+      },
+    ],
+  };
+  return await admin.createRoom(newRoom);
 };
 
 const validateJoiningRoom = async (user_id, room_id, room_password) => {
@@ -48,14 +52,13 @@ const validateJoiningRoom = async (user_id, room_id, room_password) => {
       user_id,
       status: ParticipantType.PARTICIPANT,
     });
+    socket
+      .to(room_id)
+      .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "add" });
     return true;
   }
 
   return false;
-};
-
-const checkRoom = async (room_id) => {
-  return await admin.checkRoom(room_id);
 };
 
 /**
@@ -65,6 +68,10 @@ const checkRoom = async (room_id) => {
  */
 const getRooms = async (user_id) => {
   return await admin.getRooms(user_id);
+};
+
+const getRoomNotifications = async (user_id, room_id) => {
+  return await admin.getRoomNotifications(user_id, room_id);
 };
 
 /**
@@ -80,7 +87,7 @@ const checkUserRoom = async (user_id, room_id) => {
 const getRoomParticipants = async (user_id, room_id) => {
   const room_participants = await admin.getRoomParticipants(user_id, room_id);
 
-  const participants = room_participants.map(async (participant) => {
+  const participants = room_participants?.map(async (participant) => {
     const userData = await admin.getUser(participant.user_id);
     return {
       ...participant,
@@ -103,15 +110,30 @@ const getUsersInWaitingRoom = async (room_id) => {
 const updateUsersInWaitingRoom = async (room_id, user_id, action) => {
   switch (action) {
     case "accept":
-      return await admin.acceptUserToRoom(room_id, user_id);
+      await admin.acceptUserToRoom(room_id, user_id);
+      break;
 
     case "reject":
-      return await admin.rejectUserToRoom(room_id, user_id);
+      await admin.rejectUserToRoom(room_id, user_id);
+      break;
   }
+  console.log(user_sockets[user_id]);
+  socket
+    .to(user_sockets[user_id])
+    .emit("UPDATE_USER_ROOMS", { type: "delete", debug: user_sockets });
+  socket
+    .in(room_id)
+    .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "delete" });
+  return;
 };
 
 async function deleteRoom(room_id, user_id) {
-  return await admin.deleteRoom(room_id, user_id);
+  const res = await admin.deleteRoom(room_id, user_id);
+  socket
+    .to(room_id)
+    .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "delete" });
+  socket.emit("UPDATE_USER_ROOMS", { type: "delete" });
+  return res;
 }
 
 async function createMeeting(room_id, meeting_name, offer) {
@@ -126,7 +148,7 @@ module.exports = {
   getUser,
   createRoom,
   validateJoiningRoom,
-  checkRoom,
+  existRoom,
   getRooms,
   checkUserRoom,
   getRoomParticipants,
@@ -135,4 +157,6 @@ module.exports = {
   deleteRoom,
   createMeeting,
   getRoomMeetings,
+  getRoomNotifications,
+  user_sockets,
 };

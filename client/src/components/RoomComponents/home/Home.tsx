@@ -1,11 +1,18 @@
-import { css } from "@emotion/css";
-import React, { useState } from "react";
+import { css, cx } from "@emotion/css";
+import React, { useRef, useState } from "react";
+import { useMeasure } from "../../../hooks";
 import { useGetRoomMeetings } from "../../api-hooks";
 import { Close } from "../../Shapes";
+import MeetingCard from "./MeetingCard";
 import NewMeetingForm from "./NewMeetingForm";
 
 const styled = {
   root: css`
+    height: 100%;
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
     header {
       margin-bottom: 1rem;
 
@@ -21,6 +28,11 @@ const styled = {
       }
     }
 
+    .meeting-list {
+      height: 100%;
+      overflow-y: auto;
+      width: 100%;
+    }
     .create-meeting-modal {
       .modal-content {
         min-height: 300px;
@@ -28,9 +40,15 @@ const styled = {
       }
     }
   `,
+  meetingListWrapper: (maxHeight: number) => css`
+    max-height: ${`${maxHeight - 70}px` || "100%"};
+  `,
 };
 
 function Home() {
+  const rootRef = useRef<any>(null);
+  const bounds = useMeasure(rootRef);
+
   const [openModal, setOpenModal] = useState(false);
 
   const { roomMeetings } = useGetRoomMeetings({ enabled: true });
@@ -44,7 +62,7 @@ function Home() {
   }
 
   return (
-    <div className={styled.root}>
+    <div ref={rootRef} className={styled.root}>
       <header>
         <button
           className="btn btn-primary new-meeting"
@@ -53,14 +71,17 @@ function Home() {
           New Meeting
         </button>
       </header>
-      <div className="meeting-list">
+      <div
+        className={cx("meeting-list", styled.meetingListWrapper(bounds.height))}
+      >
         <ul>
           {roomMeetings &&
-            Object.entries(roomMeetings).map(([key, value]) => (
-              <li>
-                <div>id: {key}</div>
-                <div>name: {value?.meeting_name}</div>
-              </li>
+            Object.entries(roomMeetings).map(([meeting_id, value]) => (
+              <MeetingCard
+                key={meeting_id}
+                meeting_id={meeting_id}
+                meeting_name={value.meeting_name}
+              />
             ))}
         </ul>
       </div>

@@ -1,3 +1,5 @@
+import { ParticipantType } from "../api-hooks/type";
+
 export const menus = [
   {
     name: undefined,
@@ -10,6 +12,7 @@ export const menus = [
   {
     name: "waiting-room",
     label: "Waiting Room",
+    role: [ParticipantType.HOST, ParticipantType.CO_HOST],
   },
   // {
   //   name: "settings",

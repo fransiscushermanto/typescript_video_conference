@@ -11,13 +11,11 @@ interface Props {
 
 const socket = io.connect(socketUrl);
 
-const SocketContext = React.createContext({ socket });
+const SocketContext = React.createContext(socket);
 
 const SocketProvider: React.FC<Props> = ({ children }) => {
   return (
-    <SocketContext.Provider value={{ socket }}>
-      {children}
-    </SocketContext.Provider>
+    <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
   );
 };
 

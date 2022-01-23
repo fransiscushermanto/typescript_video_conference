@@ -1,51 +1,32 @@
 require("fs");
-
-// const io = require("../../index").io;
-// const setParticipants = require("../utils/Utils").setParticipants;
-const ParticipantType = require("../utils/Utils").ParticipantType;
-// const removeUserFromRoom = require("../utils/Utils").removeUserFromRoom;
-// const getRoomHost = require("../utils/Utils").getRoomHost;
-// const getRoomHosts = require("../utils/Utils").getRoomHosts;
-// const getUserData = require("../utils/Utils").getUserData;
-// const getRoomDetails = require("../utils/Utils").getRoomDetails;
-// const getRoomParticipants = require("../utils/Utils").getRoomParticipants;
-// const getParticipant = require("../utils/Utils").getParticipant;
-// const updateRoom = require("../utils/Utils").updateRoom;
+const { admin } = require("../firebase/config");
+const io = require("../../index").io;
+const { user_sockets } = require("../utils/Utils");
 
 module.exports = function (socket) {
-  // socket.on("disconnect", () => {
-  //   const leavingUser = getParticipant({ socket_id: socket.id });
-  //   if (leavingUser) {
-  //     socket
-  //       .to(leavingUser.room_id)
-  //       .emit("LEAVING", `${leavingUser.user_name} left the room`);
-  //     // const data = removeUserFromRoom(leavingUser.user_id);
-  //     // if (data.success) {
-  //     //   const { room_id, name, newHost, role, changeHost } = data;
-  //     //   // if (status === ParticipantType.HOST && changeHost) {
-  //     //   //   let prevRoomDetail = getRoomDetails(room_id);
-  //     //   //   let user = getUserData(newHost.user_id);
-  //     //   //   let room = updateRoom({
-  //     //   //     room_id,
-  //     //   //     room_host: user.user_id,
-  //     //   //     room_password: prevRoomDetail.room_password,
-  //     //   //   });
-  //     //   //   if (room) {
-  //     //   //     room["room_participants"] = {
-  //     //   //       participants: getRoomParticipants(room_id),
-  //     //   //       hosts: getRoomHosts(room_id),
-  //     //   //     };
-  //     //   //     io.to(newHost.socket_id).emit("NEW_HOST", {
-  //     //   //       message: "You are the host now.",
-  //     //   //       user,
-  //     //   //       room,
-  //     //   //     });
-  //     //   //   }
-  //     //   // }
-  //     // }
-  //   }
-  //   console.log(`${socket.id} is disconnected`);
-  // });
+  socket.on("disconnect", () => {
+    console.log(`${socket.id} is disconnected`);
+  });
+
+  socket.on("LIST_USER_SOCKET", ({ me }) => {
+    if (!user_sockets[me.user_id]) user_sockets[me.user_id] = socket.id;
+  });
+
+  socket.on("JOIN_ROOM", ({ room_id, me }) => {
+    socket.join(room_id);
+    socket
+      .to(room_id)
+      .emit("PARTICIPANT_JOIN_ROOM", { message: `${me.user_name} has joined` });
+  });
+
+  socket.on("UPDATE_ROOM_NOTIFICATION", async ({ user_id, room_id, notif }) => {
+    try {
+      await admin.updateRoomNotification(user_id, room_id, notif);
+      socket.emit("GET_ROOM_NOTIFICATION");
+    } catch (error) {
+      console.log("error", error);
+    }
+  });
   // socket.on("JOIN_NEW_ROOM", ({ room_id, name, user_id }) => {
   //   setParticipants({
   //     user_id: user_id,
@@ -85,5 +66,3 @@ module.exports = function (socket) {
   //   socket.join(room_id);
   // });
 };
-
-module.exports.ParticipantType = ParticipantType;

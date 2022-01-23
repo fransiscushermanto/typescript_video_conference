@@ -45,8 +45,8 @@ function NewMeetingForm({ handleCloseModal }: IProps) {
   });
 
   const { mutate } = useCreateRoomMeeting({
-    onSuccess: (data) => {
-      console.log(data);
+    onSuccess: () => {
+      handleCloseModal();
     },
   });
 

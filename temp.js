@@ -54,20 +54,7 @@ const getSpecificParticipantInRoom = (room_id, options) => {
 
   return filtered;
 };
-/**
- * @param {number} length
- * @default length = 8
- */
-const generate = (length = 8) => {
-  const ALPHABET =
-    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-  let rtn = "";
-  for (let i = 0; i < length; i++) {
-    rtn += ALPHABET.charAt(Math.floor(Math.random() * ALPHABET.length));
-  }
-  return rtn;
-};
 /**
  *
  * @param {number} length
@@ -145,16 +132,7 @@ const existUser = (user_id) => {
     return false;
   }
 };
-/**
- * @param {string} room_id
- */
-const existMeetingRoom = (room_id) => {
-  if (rooms.filter((room) => room.room_id === room_id).length === 1) {
-    return true;
-  } else {
-    return false;
-  }
-};
+
 /**
  *
  * @param {Object} {room_id, room_host, room_password}

@@ -1,5 +1,4 @@
 import { css } from "@emotion/css";
-import React from "react";
 import { useParams } from "react-router-dom";
 import {
   useGetUsersInWaitingRoom,

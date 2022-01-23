@@ -7,6 +7,7 @@ import RoomMain from "./VideoRoomMain";
 import axios from "../../axios-instance";
 import { Severities } from "../CustomSnackbar";
 import { MessageContext } from "../Providers/MessageProvider";
+import { useSocket } from "../../hooks";
 
 interface Props {
   status: string;
@@ -14,7 +15,7 @@ interface Props {
 
 const VideoRoom: React.FC<Props> = ({ status }) => {
   const [messages, setMessages] = useContext(MessageContext);
-  const { socket } = React.useContext(SocketContext);
+  const socket = useSocket();
 
   const updateRoom = async (data: {
     room_id: string;

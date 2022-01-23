@@ -3,22 +3,6 @@ const fs = require("fs");
 const utils = require("../utils/Utils");
 
 module.exports = {
-  createRoom: async (req, res, next) => {
-    const { room_name, user_id } = req.body;
-    const { success, message } = await utils.createRoom({
-      room_host: user_id,
-      room_name,
-    });
-    if (success) {
-      return res.status(200).send({
-        message,
-      });
-    } else {
-      return res.status(500).send({
-        message,
-      });
-    }
-  },
   getRooms: async (req, res, next) => {
     const { user_id } = req.params;
     try {
@@ -30,6 +14,43 @@ module.exports = {
       });
     } catch (error) {
       return res.status(404).send({ message: "Not Found", error });
+    }
+  },
+  createRoom: async (req, res, next) => {
+    const { room_name, user_id } = req.body;
+    try {
+      await utils.createRoom({
+        room_host: user_id,
+        room_name,
+      });
+      return res.status(200).send({ message: "Room created successfully" });
+    } catch (error) {
+      return res.status(500).send({
+        error,
+        message: "Internal Server Error",
+      });
+    }
+  },
+  joinRoom: async (req, res, next) => {
+    const { user_id, room_id, room_password } = req.body;
+    try {
+      if (await utils.checkUserRoom(user_id, room_id)) {
+        return res.status(409).send({
+          success: false,
+          message: "You have joined this room",
+        });
+      }
+
+      if (!(await utils.validateJoiningRoom(user_id, room_id, room_password))) {
+        return res.status(400).send({
+          success: false,
+          message: "Password you provided is incorrect",
+        });
+      }
+
+      return res.status(200).send({ success: true });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
     }
   },
   deleteRoom: async (req, res, next) => {
@@ -51,6 +72,15 @@ module.exports = {
       return res.status(404).send({ message: "User not found" });
     }
   },
+  getRoomNotifications: async (req, res, next) => {
+    const { room_id, user_id } = req.params;
+    try {
+      const notifications = await utils.getRoomNotifications(user_id, room_id);
+      return res.status(200).send({ notifications });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
+  },
   getUsersInWaitingRoom: async (req, res, next) => {
     const { room_id } = req.params;
     try {
@@ -69,7 +99,6 @@ module.exports = {
       await utils.updateUsersInWaitingRoom(room_id, user_id, action);
       return res.status(200).send({ user_id, room_id, action });
     } catch (error) {
-      console.log(error);
       return res.status(500).send({ message: "An error occured" });
     }
   },
@@ -101,13 +130,15 @@ module.exports = {
   },
   checkRoom: async (req, res, next) => {
     const { room_id } = req.body;
-    if (await utils.checkRoom(room_id)) {
-      return res.status(200).send({ success: true });
-    }
+    try {
+      if (await utils.existRoom(room_id)) {
+        return res.status(204).send();
+      }
 
-    return res
-      .status(400)
-      .send({ success: false, message: "Room not available" });
+      return res.status(422).send({ message: "Room not available" });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
   },
   getParticipants: (req, res, next) => {
     return res.status(200).send({
@@ -115,25 +146,6 @@ module.exports = {
       participants: utils.getParticipants(),
     });
   },
-  joinRoom: async (req, res, next) => {
-    const { user_id, room_id, room_password } = req.body;
-
-    if (await utils.checkUserRoom(user_id, room_id)) {
-      return res.status(409).send({
-        success: false,
-        message: "You have joined this room",
-      });
-    }
-
-    if (!(await utils.validateJoiningRoom(user_id, room_id, room_password))) {
-      return res.status(400).send({
-        success: false,
-        message: "Password you provided is incorrect",
-      });
-    }
-    return res.status(200).send({ success: true });
-  },
-
   isHost: (req, res, next) => {
     const { user_id, room_id } = req.body;
     try {

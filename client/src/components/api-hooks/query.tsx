@@ -7,7 +7,7 @@ import { useContext, useEffect, useState } from "react";
 import { useQuery, UseQueryOptions } from "react-query";
 import { useParams } from "react-router-dom";
 import axios from "../../axios-instance";
-import { useFirebase, useMe } from "../../hooks";
+import { useFirebase, useMe, useSocket } from "../../hooks";
 import { Severities } from "../CustomSnackbar";
 import { callAllFunctions } from "../helper";
 import { MessageContext } from "../Providers/MessageProvider";
@@ -16,6 +16,7 @@ import {
   QueryOptions,
   RoomMeetingModel,
   RoomModel,
+  RoomNotificationModel,
   RoomStatus,
   UserInfoModel,
   UserInWaitingRoomModel,
@@ -30,11 +31,9 @@ interface Participant {
 export function useGetRooms(
   options: UseQueryOptions<{ rooms: RoomModel[] }, any> = {},
 ) {
+  const socket = useSocket();
   const [me] = useMe();
-  const [rooms, setRooms] = useState<RoomModel[]>([]);
-  const firebase = useFirebase();
-  const [messages, setMessages] = useContext(MessageContext);
-  const { refetch, ...resProps } = useQuery<{ rooms: RoomModel[] }, any>(
+  const { refetch, data, ...resProps } = useQuery<{ rooms: RoomModel[] }, any>(
     "rooms",
     async () => {
       const res = await axios.get(`/${me?.user_id}/rooms`);
@@ -58,25 +57,19 @@ export function useGetRooms(
       }, options.onError),
     },
   );
+  const [rooms, setRooms] = useState<RoomModel[]>(data?.rooms || []);
+  const [messages, setMessages] = useContext(MessageContext);
 
-  // useEffect(() => {
-  //   if (me?.user_id) {
-  //     firebase.getRooms(me.user_id, {
-  //       onNext: async (data) => {
-  //         if (data.data()) {
-  //           refetch();
-  //         }
-  //       },
-  //     });
-  //   }
+  useEffect(() => {
+    socket?.on("UPDATE_USER_ROOMS", (data) => {
+      console.log("UPDATE_USER_ROOMS", data);
+      refetch();
+    });
 
-  //   return () => {
-  //     if (me?.user_id) {
-  //       const unsub = firebase.getRooms(me.user_id, { onNext: () => {} });
-  //       unsub();
-  //     }
-  //   };
-  // }, [me]);
+    return () => {
+      socket?.off("UPDATE_USER_ROOMS", () => {});
+    };
+  }, []);
 
   return { rooms, refetch, ...resProps };
 }
@@ -85,13 +78,8 @@ export function useGetUsersInWaitingRoom(
   room_id: string,
   options: UseQueryOptions<{ users: UserInWaitingRoomModel[] }, any> = {},
 ) {
-  const [usersInWaitingRoom, setUsersInWaitingRoom] = useState<
-    UserInWaitingRoomModel[]
-  >([]);
-  const firebase = useFirebase();
-  const [messages, setMessages] = useContext(MessageContext);
-
-  const { refetch, ...resProps } = useQuery<
+  const socket = useSocket();
+  const { refetch, data, ...resProps } = useQuery<
     { users: UserInWaitingRoomModel[] },
     any
   >(
@@ -119,28 +107,18 @@ export function useGetUsersInWaitingRoom(
     },
   );
 
-  // useEffect(() => {
-  //   if (room_id) {
-  //     firebase.getUserInWaitingRoom(room_id, {
-  //       onNext: callAllFunctions(
-  //         async (data: DocumentSnapshot<DocumentData>) => {
-  //           if (data.data()) {
-  //             refetch();
-  //           }
-  //         },
-  //       ),
-  //     });
-  //   }
+  const [usersInWaitingRoom, setUsersInWaitingRoom] = useState<
+    UserInWaitingRoomModel[]
+  >(data?.users || []);
+  const [messages, setMessages] = useContext(MessageContext);
 
-  //   return () => {
-  //     if (room_id) {
-  //       const unsub = firebase.getUserInWaitingRoom(room_id, {
-  //         onNext: () => {},
-  //       });
-  //       unsub();
-  //     }
-  //   };
-  // }, [room_id]);
+  useEffect(() => {
+    socket?.on("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", refetch);
+
+    return () => {
+      socket?.off("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", () => {});
+    };
+  }, []);
 
   return { usersInWaitingRoom, refetch, ...resProps };
 }
@@ -153,10 +131,8 @@ export function useGetRoomParticipants(
   const { room_id: roomIdParam } = useParams<{ room_id }>();
   const room_id = roomIdParam || options.room_id;
   const [me] = useMe();
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [messages, setMessages] = useContext(MessageContext);
-  const firebase = useFirebase();
-  const { refetch, ...resProps } = useQuery<
+
+  const { refetch, data, ...resProps } = useQuery<
     { participants: Participant[] },
     any
   >(
@@ -187,12 +163,19 @@ export function useGetRoomParticipants(
       }, options.onError),
     },
   );
+  const [participants, setParticipants] = useState<Participant[]>(
+    data?.participants || [],
+  );
+  const [messages, setMessages] = useContext(MessageContext);
+  const firebase = useFirebase();
 
   useEffect(() => {
     if (room_id) {
       firebase.getRoomParticipants({
-        next: async (data: QuerySnapshot<DocumentData>) => {
-          console.log(data);
+        next: async (snapshot: QuerySnapshot<DocumentData>) => {
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === "modified") refetch();
+          });
         },
       });
     }
@@ -209,6 +192,64 @@ export function useGetRoomParticipants(
     };
   }, [room_id]);
   return { participants, refetch, ...resProps };
+}
+
+export function useGetRoomNotification(
+  options: UseQueryOptions<{ notifications: RoomNotificationModel }, any> & {
+    room_id?: string;
+  } = {},
+) {
+  const [me] = useMe();
+  const socket = useSocket();
+  const { room_id: roomIdParam } = useParams<{ room_id }>();
+  const room_id = roomIdParam || options.room_id;
+  const { refetch, data, ...resProps } = useQuery<
+    { notifications: RoomNotificationModel },
+    any
+  >(
+    "room_notifications",
+    async () => {
+      const res = await axios.get(
+        `/notifications/${me?.user_id}/rooms/${room_id}`,
+      );
+      return res.data;
+    },
+    {
+      ...options,
+      enabled: options.enabled || false,
+      onSuccess: callAllFunctions((data) => {
+        setRoomNotifications(data.notifications);
+      }, options.onSuccess),
+      onError: callAllFunctions(({ message }) => {
+        setMessages([
+          ...messages,
+          {
+            id: Date.now(),
+            message: message,
+            severity: Severities.ERROR,
+          },
+        ]);
+      }, options.onError),
+    },
+  );
+  const [roomNotifications, setRoomNotifications] =
+    useState<RoomNotificationModel>(
+      data?.notifications || {
+        "waiting-room": false,
+        participants: false,
+      },
+    );
+  const [messages, setMessages] = useContext(MessageContext);
+
+  useEffect(() => {
+    socket?.on("GET_ROOM_NOTIFICATION", refetch);
+
+    return () => {
+      socket?.off("GET_ROOM_NOTIFICATION", () => {});
+    };
+  }, []);
+
+  return { roomNotifications, refetch, ...resProps };
 }
 
 export function useGetRoomMeetings(
@@ -253,18 +294,16 @@ export function useGetRoomMeetings(
     if (room_id) {
       firebase.getRoomMeetings({
         next: async (snapshot: QuerySnapshot<DocumentData>) => {
-          console.log(snapshot.docChanges);
+          snapshot.docChanges().forEach(() => {
+            refetch();
+          });
         },
       });
     }
 
     return () => {
       if (room_id) {
-        const unsub = firebase.getRoomMeetings({
-          next: async (snapshot: QuerySnapshot<DocumentData>) => {
-            console.log(snapshot.docChanges);
-          },
-        });
+        const unsub = firebase.getRoomMeetings();
         unsub();
       }
     };

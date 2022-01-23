@@ -1,6 +1,6 @@
 import { css } from "@emotion/css";
 import React, { useEffect } from "react";
-import { useMe } from "../../../hooks";
+import { useGetRole, useMe } from "../../../hooks";
 import { useGetRoomParticipants } from "../../api-hooks";
 import { ParticipantType } from "../../api-hooks/type";
 
@@ -45,12 +45,7 @@ const styled = {
 };
 
 function UserWaitingCard({ name, onAccept, onReject }: IUserWaitingCardProps) {
-  const [me] = useMe();
-  const { participants } = useGetRoomParticipants();
-
-  const myRole = participants?.find(
-    (participant) => participant.user_id === me.user_id,
-  )?.role;
+  const myRole = useGetRole();
 
   return (
     <div className={styled.root}>

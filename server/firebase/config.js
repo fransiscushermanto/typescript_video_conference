@@ -1,6 +1,6 @@
 require("dotenv").config();
 const uuid = require("uuid");
-const admin = require("firebase-admin");
+const firebaseAdmin = require("firebase-admin");
 const collections = require("./collections");
 const ParticipantType = require("../utils/types");
 const produce = require("immer").produce;
@@ -12,7 +12,7 @@ const RoomStatus = {
 };
 
 var config = {
-  credential: admin.credential.cert({
+  credential: firebaseAdmin.credential.cert({
     type: process.env.firebase_admin_type,
     project_id: process.env.firebase_admin_project_id,
     private_key_id: process.env.firebase_admin_private_key_id,
@@ -29,10 +29,10 @@ var config = {
 
 class FirebaseAdmin {
   constructor() {
-    admin.initializeApp(config);
-    this.auth = admin.auth();
-    this.firestore = admin.firestore();
-    this.storage = admin.storage();
+    firebaseAdmin.initializeApp(config);
+    this.auth = firebaseAdmin.auth();
+    this.firestore = firebaseAdmin.firestore();
+    this.storage = firebaseAdmin.storage();
   }
 
   async verifyIdToken(idToken) {
@@ -60,6 +60,20 @@ class FirebaseAdmin {
     return res.data();
   }
 
+  async getUserNotifications(user_id) {
+    const room_data = await this.firestore
+      .collection(collections.notifications)
+      .doc(user_id)
+      .get();
+    return room_data.data();
+  }
+
+  async getRoomNotifications(user_id, room_id) {
+    const user_notif = await this.getUserNotifications(user_id);
+
+    return user_notif?.rooms?.[room_id] || {};
+  }
+
   async getRoomMeetings(room_id) {
     const res = await this.firestore
       .collection(collections.room_meetings)
@@ -84,7 +98,7 @@ class FirebaseAdmin {
     return res.data();
   }
 
-  async checkRoom(room_id) {
+  async existRoom(room_id) {
     return !!(await this.getRoom(room_id));
   }
 
@@ -102,6 +116,18 @@ class FirebaseAdmin {
       .collection(collections.rooms)
       .doc(payload.room_id)
       .set(payload);
+
+    await this.firestore
+      .collection(collections.notifications)
+      .doc(payload.room_host)
+      .set({
+        rooms: {
+          [payload.room_id]: {
+            participants: false,
+            "waiting-room": false,
+          },
+        },
+      });
 
     if (!existingUserRoom.data()?.rooms) {
       await this.firestore
@@ -123,6 +149,24 @@ class FirebaseAdmin {
     }
 
     return room;
+  }
+
+  async updateRoomNotification(user_id, room_id, payload) {
+    const user_notif = this.getUserNotifications(user_id);
+    const room_notif = this.getRoomNotifications(user_id, room_id);
+    await this.firestore
+      .collection(collections.notifications)
+      .doc(user_id)
+      .update({
+        ...user_notif,
+        rooms: {
+          ...user_notif.rooms,
+          [room_id]: {
+            ...room_notif,
+            ...payload,
+          },
+        },
+      });
   }
 
   /**
@@ -154,7 +198,7 @@ class FirebaseAdmin {
   async getRoomParticipant(user_id, room_id) {
     const room_data = await this.getRoom(room_id);
 
-    const participant = room_data.room_participants.find(
+    const participant = room_data?.room_participants?.find(
       (participant) => participant.user_id === user_id,
     );
     return participant;
@@ -164,7 +208,7 @@ class FirebaseAdmin {
     if (user_id && room_id) {
       const room_data = await this.getRoom(room_id);
 
-      return room_data.room_participants;
+      return room_data?.room_participants;
     }
 
     return [];
@@ -203,8 +247,6 @@ class FirebaseAdmin {
 
   async joinRoom(room_id, payload) {
     try {
-      const room_data = await this.getRoom(room_id);
-
       const exist_waiting_room = await this.getExistWaitingRoom(room_id);
       const user_rooms = await this.getUserRooms(payload.user_id);
 
@@ -371,6 +413,10 @@ class FirebaseAdmin {
         ) {
           const prevRooms = await this.getUserRooms(user_id);
           await this.firestore
+            .collection(collections.room_meetings)
+            .doc(room_id)
+            .delete();
+          await this.firestore
             .collection(collections.user_rooms)
             .doc(user_id)
             .update({
@@ -389,7 +435,7 @@ class FirebaseAdmin {
       } else {
         let userRoom = await this.getUserRooms(user_id);
         userRoom = userRoom.find((room) => room.room_id === room_id);
-        if (userRoom.status === RoomStatus.PENDING) {
+        if (userRoom && userRoom.status === RoomStatus.PENDING) {
           const waitingParticipant = await this.getUsersInWaitingRoom(room_id);
           this.firestore
             .collection(collections.waiting_room)
@@ -453,4 +499,6 @@ class FirebaseAdmin {
   }
 }
 
-module.exports.FirebaseAdmin = FirebaseAdmin;
+const admin = new FirebaseAdmin();
+
+module.exports = { admin };

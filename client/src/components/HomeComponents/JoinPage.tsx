@@ -1,7 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { MessageContext } from "../Providers/MessageProvider";
 import { Severities } from "../CustomSnackbar";
-import axios from "../../axios-instance";
 import { useCheckRoom, useJoinRoom } from "../api-hooks";
 import { useMe } from "../../hooks";
 import { useFormContext } from "react-hook-form";
@@ -35,6 +34,16 @@ const JoinPage: React.FC<Props> = ({
           user_id: me.user_id,
         });
       }
+    },
+    onError: ({ response: { data } }) => {
+      setMessages([
+        ...messages,
+        {
+          id: Date.now(),
+          message: data.message,
+          severity: Severities.ERROR,
+        },
+      ]);
     },
   });
 

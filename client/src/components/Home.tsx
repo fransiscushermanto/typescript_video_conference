@@ -14,6 +14,8 @@ import { css } from "@emotion/css";
 import { MessageContext } from "./Providers/MessageProvider";
 import { Severities } from "./CustomSnackbar";
 import { useCreateRoom } from "./api-hooks";
+import { callAllFunctions } from "./helper";
+import useSocket from "./../hooks/use-socket";
 
 interface Props extends RouteComponentProps {
   history: H.History<H.LocationState>;
@@ -49,7 +51,7 @@ const Home: React.FC<Props> = ({ history }) => {
   const createSchema = yup.object().shape({
     room_name: yup.string().required("This field is required"),
   });
-
+  const socket = useSocket();
   const { logout } = useAuth();
 
   const [me] = useMe();
@@ -150,7 +152,10 @@ const Home: React.FC<Props> = ({ history }) => {
     <FormProvider {...formContext}>
       <div className="home-wrapper wrapper">
         <header className={styled.header}>
-          <button onClick={logout} className={styled.logout}>
+          <button
+            onClick={callAllFunctions(() => socket.disconnect(), logout)}
+            className={styled.logout}
+          >
             <img src={LogOutSVG} alt="logout" />
           </button>
         </header>

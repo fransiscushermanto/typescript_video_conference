@@ -41,7 +41,7 @@ const mediaStream = new MediaStream([audioTrack, videoTrack]);
 
 const VideoHandler: React.FC<Props> = ({ connectToNewUser }) => {
   const [stream, setStream] = useState<MediaStream>(mediaStream as MediaStream);
-  const { socket } = useContext(SocketContext);
+  const socket = useContext(SocketContext);
   const videoRef = useRef() as any;
   // const startVideo = useCallback(
   //   async (permissionType: "mic" | "cam"): Promise<void> => {
@@ -66,10 +66,10 @@ const VideoHandler: React.FC<Props> = ({ connectToNewUser }) => {
   // );
 
   useEffect(() => {
-    socket.on("WELCOME", ({ new_peer_id }) => {
+    socket?.on("WELCOME", ({ new_peer_id }) => {
       connectToNewUser(new_peer_id, stream);
     });
-  }, [socket, stream]);
+  }, [stream]);
 
   // useEffect(() => {
   //   startVideo("cam");

@@ -19,6 +19,7 @@ const io = (module.exports.io = socketIo(http, {
   },
 }));
 
+app.set("socket", io);
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
