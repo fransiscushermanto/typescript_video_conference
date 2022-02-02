@@ -26,11 +26,8 @@ module.exports = function (socket) {
     }
   });
 
-  socket.on("JOIN_ROOM", ({ room_id, me }) => {
+  socket.on("JOIN_ROOM", ({ room_id }) => {
     socket.join(room_id);
-    socket
-      .to(room_id)
-      .emit("PARTICIPANT_JOIN_ROOM", { message: `${me.user_name} has joined` });
   });
 
   socket.on("UPDATE_ROOM_NOTIFICATION", async ({ user_id, room_id, notif }) => {

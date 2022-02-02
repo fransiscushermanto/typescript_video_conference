@@ -1,21 +1,12 @@
 import Peer from "peerjs";
 import React, { useEffect, useRef, useState } from "react";
-import VideoHandler from "../Handlers/VideoHandler";
-import { Info } from "../Shapes";
+import VideoHandler from "../../Handlers/VideoHandler";
+import { Info } from "../../Shapes";
 import { css } from "@emotion/css";
-import RoomInfo from "./VideoRoomInfo";
-import { detectOnBlur } from "../helper";
+import RoomInfo from "./MeetingRoomInfo";
+import { detectOnBlur } from "../../helper";
 
-interface Props {
-  peer: Peer;
-  status: string;
-  inRoomDetails: {
-    room_id: string;
-    room_password: string;
-    room_host: string;
-    room_participants: Array<any>;
-  };
-}
+interface Props {}
 
 const styled = {
   roomInfoIconWrapper: css`
@@ -45,7 +36,7 @@ const styled = {
   `,
 };
 
-const VidoRoomMain: React.FC<Props> = ({ peer, status, inRoomDetails: room }) => {
+const MeetingRoomMain: React.FC<Props> = () => {
   const [openRoomInfo, setOpenRoomInfo] = useState(false);
   const videoWrapperRef = useRef(null);
   const roomIconRef = useRef(null);
@@ -58,45 +49,13 @@ const VidoRoomMain: React.FC<Props> = ({ peer, status, inRoomDetails: room }) =>
     videoWrapperRef.current.append(video);
   };
 
-  const connectToNewUser = React.useCallback(
-    (peerId: string, stream: MediaStream) => {
-      if (peer) {
-        const call = peer.call(peerId, stream);
-        const video = document.createElement("video");
-        if (call) {
-          call.on("stream", (userVideoStream) => {
-            console.log("webrtc stream");
-            addVideoToStream(video, userVideoStream);
-          });
-          call.on("close", () => {
-            console.log("webrtc close");
-            video.remove();
-          });
-        }
-      }
-    },
-    [peer],
-  );
-
-  useEffect(() => {
-    if (peer) {
-      peer.on("open", (id) => console.log(id));
-      peer.on("call", (call) => {
-        console.log("incoming call", call);
-      });
-    }
-  }, [peer]);
-
   useEffect(() => {
     detectOnBlur(roomIconRef, openRoomInfo, setOpenRoomInfo);
   }, [openRoomInfo]);
 
   return (
     <div className="main">
-      <div
-        ref={roomIconRef}
-        className={styled.roomInfoIconWrapper}
-      >
+      <div ref={roomIconRef} className={styled.roomInfoIconWrapper}>
         <button
           className={styled.roomInfoButton}
           onClick={() => setOpenRoomInfo((prev) => !prev)}
@@ -106,10 +65,10 @@ const VidoRoomMain: React.FC<Props> = ({ peer, status, inRoomDetails: room }) =>
         {openRoomInfo && <RoomInfo onClick={() => setOpenRoomInfo(true)} />}
       </div>
       <div ref={videoWrapperRef} id="video-wrapper" className="video-wrapper">
-        <VideoHandler connectToNewUser={connectToNewUser} />
+        {/* <VideoHandler connectToNewUser={connectToNewUser} /> */}
       </div>
     </div>
   );
 };
 
-export default VidoRoomMain;
+export default MeetingRoomMain;

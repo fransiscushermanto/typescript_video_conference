@@ -3,6 +3,7 @@ import { useHistory, useParams } from "react-router";
 import Participant from "./participants/Participant";
 import WaitingRoom from "./waitingRoom/WaitingRoom";
 import Home from "./home/Home";
+import MeetingRoom from "./meeting/MeetingRoom";
 
 const styled = {
   root: css`
@@ -10,14 +11,15 @@ const styled = {
 
     flex: 1;
     width: 100%;
-    padding: 2.5rem;
     color: white;
+
+    > div {
+      padding: 2.5rem;
+    }
   `,
 };
 
 function Content() {
-  const history = useHistory();
-
   const { menu } = useParams<{ menu }>();
 
   function renderContent() {
@@ -30,6 +32,8 @@ function Content() {
         return <Participant />;
       case "waiting-room":
         return <WaitingRoom />;
+      case "meeting":
+        return <MeetingRoom />;
       default:
         return <div></div>;
     }

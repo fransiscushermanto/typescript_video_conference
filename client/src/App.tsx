@@ -3,11 +3,11 @@ import { Switch, Route } from "react-router-dom";
 import { SnackbarProvider } from "./components/CustomSnackbar";
 import MessageHandler from "./components/Handlers/MessageHandler";
 
-import RoomGuard from "./components/HOC/RoomGuard";
+import PageGuard from "./components/HOC/PageGuard";
 import Home from "./components/Home";
 import Login from "./components/Login";
 import NotFound from "./components/NotFound";
-import VideoRoom from "./components/VideoRoomComponents/VideoRoom";
+// import VideoRoom from "./components/MeetingRoomComponents/VideoRoom";
 import AuthGuard from "./components/HOC/AuthGuard";
 import Room from "./components/RoomComponents/Room";
 
@@ -20,9 +20,9 @@ const App = (props) => {
       <Switch>
         <Route path="/login" component={AuthGuard(Login)} />
         <Route path="/" exact component={AuthGuard(Home)} />
-        <Route path="/room/:room_id" component={RoomGuard(Room)} />
-        <Route path="/start/:meeting_id" component={RoomGuard(VideoRoom)} />
-        <Route path="/join/:meeting_id" component={RoomGuard(VideoRoom)} />
+        <Route path="/room/:room_id" component={PageGuard(Room)} />
+        {/* <Route path="/start/:meeting_id" component={RoomGuard(VideoRoom)} />
+        <Route path="/join/:meeting_id" component={RoomGuard(VideoRoom)} /> */}
         <Route path="*" component={NotFound} />
       </Switch>
     </>

@@ -82,8 +82,17 @@ export default css`
           }
         }
       }
-      &.room-wrapper {
+      &.meeting-room-wrapper {
         flex-direction: column;
+        padding: 0;
+        header {
+          height: auto;
+          /* background-color: rgba(0, 0, 0, 0.5); */
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+        }
+
         .main {
           position: relative;
           flex: 1;
@@ -101,71 +110,65 @@ export default css`
             grid-template-rows: repeat(auto-fit, minmax(300px, auto));
           }
         }
-      }
-    }
-    header {
-      height: auto;
-      /* background-color: rgba(0, 0, 0, 0.5); */
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-    }
-    footer {
-      height: auto;
-      min-height: 70px;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      .btn-leave-wrapper {
-        margin-left: auto;
-        padding: 0px 10px;
-        .btn-leave {
-          color: white;
-          font-size: 16px;
-          font-weight: bold;
-          background: red;
-          border: none;
-          border-radius: 10px;
-          padding: 5px 15px;
-          transition: all ease 0.5s;
-          &:hover {
-            background: darkred;
-          }
-        }
-      }
-      .audio-wrapper,
-      .camera-wrapper {
-        width: 90px;
-        height: 70px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        > div {
-          cursor: pointer;
+
+        footer {
+          height: auto;
+          min-height: 70px;
+          background-color: rgba(0, 0, 0, 0.5);
           display: flex;
-          flex-direction: column;
+          flex-direction: row;
           align-items: center;
-          justify-content: center;
-          width: 100%;
-          height: 100%;
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.1);
+          .btn-leave-wrapper {
+            margin-left: auto;
+            padding: 0px 10px;
+            .btn-leave {
+              color: white;
+              font-size: 16px;
+              font-weight: bold;
+              background: red;
+              border: none;
+              border-radius: 10px;
+              padding: 5px 15px;
+              transition: all ease 0.5s;
+              &:hover {
+                background: darkred;
+              }
+            }
           }
-          span {
-            font-size: 13px;
-            user-select: none;
-          }
-          .image-wrapper {
+          .audio-wrapper,
+          .camera-wrapper {
+            width: 90px;
+            height: 70px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 30px;
-            img {
+            color: white;
+            > div {
+              cursor: pointer;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
               width: 100%;
               height: 100%;
+              &:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+              }
+              span {
+                font-size: 13px;
+                user-select: none;
+              }
+              .image-wrapper {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                img {
+                  width: 100%;
+                  height: 100%;
+                }
+              }
             }
           }
         }

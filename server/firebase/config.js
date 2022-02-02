@@ -482,12 +482,12 @@ class FirebaseAdmin {
   }
 
   async createMeeting(room_id, user_id, meeting_name, offer) {
-    return new Promise(async (resolve) => {
+    const meetingID = uuid.v4();
+    await new Promise(async (resolve) => {
       const prevRoomMeetings = await this.getRoomMeetings(room_id);
       const roomMeetingsDoc = this.firestore
         .collection(collections.room_meetings)
         .doc(room_id);
-      const meetingID = uuid.v4();
       const created_at = new Date();
       const created_by = user_id;
 
@@ -513,6 +513,7 @@ class FirebaseAdmin {
 
       resolve(true);
     });
+    return meetingID;
   }
 
   async deleteMeeting(room_id, meeting_id) {

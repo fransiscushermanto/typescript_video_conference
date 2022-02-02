@@ -2,7 +2,7 @@ import { css } from "@emotion/css";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { useMe, useRTC } from "../../../hooks";
 import { useCreateRoomMeeting } from "../../api-hooks";
 
@@ -37,6 +37,8 @@ function NewMeetingForm({ handleCloseModal }: IProps) {
   const [me] = useMe();
   const { room_id } = useParams<{ room_id }>();
   const pc = useRTC();
+  const { url } = useRouteMatch();
+  const history = useHistory();
   const { register, errors, handleSubmit } = useForm({
     resolver: yupResolver(
       yup.object().shape({
@@ -46,8 +48,9 @@ function NewMeetingForm({ handleCloseModal }: IProps) {
   });
 
   const { mutate } = useCreateRoomMeeting({
-    onSuccess: () => {
+    onSuccess: (data) => {
       handleCloseModal();
+      history.push(`${url}/meeting/${data.meeting_id}`);
     },
   });
 

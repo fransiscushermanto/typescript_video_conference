@@ -53,8 +53,7 @@ function RoomDetailItem({ label, value }: { label: string; value: string }) {
   );
 }
 
-function VideoRoomInfo({ onClick }: Props) {
-
+function MeetingRoomInfo({ onClick }: Props) {
   // const hostInfo = room.room_participants.hosts?.find(
   //   (host) => host.status === "host",
   // );
@@ -77,4 +76,4 @@ function VideoRoomInfo({ onClick }: Props) {
   );
 }
 
-export default VideoRoomInfo;
+export default MeetingRoomInfo;

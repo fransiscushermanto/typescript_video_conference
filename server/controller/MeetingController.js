@@ -5,8 +5,13 @@ module.exports = {
     const { room_id, meeting_name, offer, user_id } = req.body;
 
     try {
-      await utils.createMeeting(room_id, user_id, meeting_name, offer);
-      return res.status(204).send();
+      const meeting_id = await utils.createMeeting(
+        room_id,
+        user_id,
+        meeting_name,
+        offer,
+      );
+      return res.status(200).send({ meeting_id });
     } catch (error) {
       return res.status(500).send({ message: "Internal Server Error", error });
     }

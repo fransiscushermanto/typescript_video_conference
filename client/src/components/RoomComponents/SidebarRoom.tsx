@@ -132,6 +132,8 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
     };
   }, [myRole, room]);
 
+  if (!menus.find((menu) => menu.name === activeMenu).sidebar) return null;
+
   return (
     <div className={styled.sidebar}>
       <button
@@ -141,21 +143,23 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
         Back
       </button>
       <div className="menu-wrapper">
-        {menus.map(({ label, name, role }, i) => {
-          if (role && !role?.includes(myRole)) return null;
-          return (
-            <div
-              key={i}
-              className={cx("menu", {
-                active: name === activeMenu,
-                notification: roomNotifications[name],
-              })}
-              onClick={() => history.push(name ? `${url}/${name}` : `${url}`)}
-            >
-              <span>{label}</span>
-            </div>
-          );
-        })}
+        {menus
+          .filter((menu) => menu.sidebar)
+          .map(({ label, name, role }, i) => {
+            if (role && !role?.includes(myRole)) return null;
+            return (
+              <div
+                key={i}
+                className={cx("menu", {
+                  active: name === activeMenu,
+                  notification: roomNotifications[name],
+                })}
+                onClick={() => history.push(name ? `${url}/${name}` : `${url}`)}
+              >
+                <span>{label}</span>
+              </div>
+            );
+          })}
       </div>
     </div>
   );
