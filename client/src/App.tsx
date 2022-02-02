@@ -1,7 +1,6 @@
 import React from "react";
 import { Switch, Route } from "react-router-dom";
 import { SnackbarProvider } from "./components/CustomSnackbar";
-import { SocketProvider } from "./components/Providers/SocketProvider";
 import MessageHandler from "./components/Handlers/MessageHandler";
 
 import RoomGuard from "./components/HOC/RoomGuard";
@@ -14,7 +13,7 @@ import Room from "./components/RoomComponents/Room";
 
 const App = (props) => {
   return (
-    <SocketProvider>
+    <>
       <SnackbarProvider maxStack={5} sort="asc">
         <MessageHandler />
       </SnackbarProvider>
@@ -26,7 +25,7 @@ const App = (props) => {
         <Route path="/join/:meeting_id" component={RoomGuard(VideoRoom)} />
         <Route path="*" component={NotFound} />
       </Switch>
-    </SocketProvider>
+    </>
   );
 };
 

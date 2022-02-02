@@ -40,7 +40,7 @@ const JoinPage: React.FC<Props> = ({
         ...messages,
         {
           id: Date.now(),
-          message: data.message,
+          message: data?.message,
           severity: Severities.ERROR,
         },
       ]);

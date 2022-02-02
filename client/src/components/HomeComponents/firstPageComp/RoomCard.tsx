@@ -6,8 +6,13 @@ import KebabMenuSVG from "../../../assets/kebab-menu.svg";
 import * as Popover from "@radix-ui/react-popover";
 import { useDeleteRoom } from "./../../api-hooks/mutation";
 import useMe from "./../../../hooks/use-me";
-import { useGetRoomParticipants } from "../../api-hooks";
-import { useSocket } from "../../../hooks";
+import { useGetRole } from "../../../hooks";
+import {
+  getInitialFromString,
+  hashCode,
+  intToRGB,
+  numberFromText,
+} from "../../helper";
 
 interface IRoomCard {
   room: {
@@ -94,26 +99,11 @@ function RoomCard({ room }: IRoomCard) {
   const { room_name, room_id, status } = room;
   const [me] = useMe();
   const history = useHistory();
-  const { participants } = useGetRoomParticipants({ room_id });
+  const myRole = useGetRole();
   const { mutate: mutateDeleteRoom } = useDeleteRoom();
 
-  function getInitialRoomName() {
-    const arrStr = String(room_name).split(" ");
-    if (arrStr.length > 1) {
-      return (
-        arrStr[0].substr(0, 1).toUpperCase() +
-        arrStr[1].substr(0, 1).toUpperCase()
-      );
-    } else {
-      return arrStr[0].substr(0, 1).toUpperCase();
-    }
-  }
-
-  const isHost =
-    participants.some((participant) => participant.user_id === me?.user_id) &&
-    participants.find((participant) => participant.user_id).role ===
-      ParticipantType.HOST;
-
+  const isHost = myRole === ParticipantType.HOST;
+  const initials = React.useMemo(() => getInitialFromString(room_name), []);
   const menus = React.useMemo(
     () => [
       {
@@ -126,12 +116,6 @@ function RoomCard({ room }: IRoomCard) {
     ],
     [isHost],
   );
-
-  const getRandomColor = React.useMemo(() => {
-    const color = ["#C6D57E", "#D57E7E", "#A2CDCD", "#FFE1AF"];
-
-    return color[Math.floor(Math.random() * color.length)];
-  }, []);
 
   function onCardClick() {
     if (status === RoomStatus.ACCEPTED) {
@@ -162,8 +146,13 @@ function RoomCard({ room }: IRoomCard) {
         </Popover.Content>
       </Popover.Root>
 
-      <div style={{ backgroundColor: getRandomColor }} className="initial">
-        <span>{getInitialRoomName()}</span>
+      <div
+        style={{
+          backgroundColor: intToRGB(hashCode(room_id)),
+        }}
+        className="initial"
+      >
+        <span>{initials}</span>
       </div>
       <div className="name">
         <span>{room_name}</span>

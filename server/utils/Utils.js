@@ -117,13 +117,13 @@ const updateUsersInWaitingRoom = async (room_id, user_id, action) => {
       await admin.rejectUserToRoom(room_id, user_id);
       break;
   }
-  console.log(user_sockets[user_id]);
-  socket
-    .to(user_sockets[user_id])
-    .emit("UPDATE_USER_ROOMS", { type: "delete", debug: user_sockets });
-  socket
-    .in(room_id)
-    .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "delete" });
+  socket.to(user_sockets[user_id]).emit("UPDATE_USER_ROOMS", {
+    type: action === "reject" ? "delete" : "update",
+    debug: user_sockets,
+  });
+  socket.in(room_id).emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", {
+    type: action === "reject" ? "delete" : "update",
+  });
   return;
 };
 
@@ -133,11 +133,16 @@ async function deleteRoom(room_id, user_id) {
     .to(room_id)
     .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "delete" });
   socket.emit("UPDATE_USER_ROOMS", { type: "delete" });
+  socket.leave(room_id);
   return res;
 }
 
-async function createMeeting(room_id, meeting_name, offer) {
-  return await admin.createMeeting(room_id, meeting_name, offer);
+async function createMeeting(room_id, user_id, meeting_name, offer) {
+  return await admin.createMeeting(room_id, user_id, meeting_name, offer);
+}
+
+async function deleteMeeting(room_id, meeting_id) {
+  return await admin.deleteMeeting(room_id, meeting_id);
 }
 
 async function getRoomMeetings(room_id) {
@@ -156,6 +161,7 @@ module.exports = {
   updateUsersInWaitingRoom,
   deleteRoom,
   createMeeting,
+  deleteMeeting,
   getRoomMeetings,
   getRoomNotifications,
   user_sockets,

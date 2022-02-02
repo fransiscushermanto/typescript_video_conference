@@ -99,10 +99,12 @@ export const callAllFunctions =
     fns.forEach((fn) => fn?.(...args));
 
 export function pushNotification(
-  options: NotificationOptions = {
+  options: NotificationOptions & { link?: string } = {
     icon: Icon,
   },
 ) {
+  const { link, ...resOptions } = options;
+
   const title = "Video Room";
   // Let's check if the browser supports notifications
   if (!("Notification" in window)) {
@@ -112,7 +114,10 @@ export function pushNotification(
   // Let's check whether notification permissions have already been granted
   else if (Notification.permission === "granted") {
     // If it's okay let's create a notification
-    new Notification(title, options);
+    const notification = new Notification(title, resOptions);
+    notification.addEventListener("click", () => {
+      window.open(link, "_blank");
+    });
   }
 
   // Otherwise, we need to ask the user for permission
@@ -120,11 +125,50 @@ export function pushNotification(
     Notification.requestPermission().then(function (permission) {
       // If the user accepts, let's create a notification
       if (permission === "granted") {
-        new Notification(title, options);
+        const notification = new Notification(title, resOptions);
+        notification.addEventListener("click", () => {
+          window.open(link, "_blank");
+        });
       }
     });
   }
 
   // At last, if the user has denied notifications, and you
   // want to be respectful there is no need to bother them any more.
+}
+
+export function numberFromText(text) {
+  // numberFromText("AA");
+  const charCodes = text
+    .split("") // => ["A", "A"]
+    .map((char) => char.charCodeAt(0)) // => [65, 65]
+    .join(""); // => "6565"
+  return charCodes;
+}
+
+export function getInitialFromString(string: string, splitter: string = " ") {
+  const arrStr = String(string).split(splitter);
+  if (arrStr.length > 1) {
+    return (
+      arrStr[0].substr(0, 1).toUpperCase() +
+      arrStr[1].substr(0, 1).toUpperCase()
+    );
+  } else {
+    return arrStr[0].substr(0, 1).toUpperCase();
+  }
+}
+
+export function hashCode(str) {
+  // java String#hashCode
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return hash;
+}
+
+export function intToRGB(i) {
+  var c = (i & 0x00ffffff).toString(16).toUpperCase();
+
+  return "#" + "00000".substring(0, 6 - c.length) + c;
 }

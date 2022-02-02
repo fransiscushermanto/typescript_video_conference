@@ -7,7 +7,7 @@ import {
   useGetUsersInWaitingRoom,
 } from "../api-hooks";
 import { menus } from "./constants";
-import { useGetRole, useMe, useSocket } from "../../hooks";
+import { useGetRole, useGetRoom, useMe, useSocket } from "../../hooks";
 import { pushNotification } from "../helper";
 
 const styled = {
@@ -64,6 +64,7 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
   const { room_id } = useParams<{ room_id }>();
   const { url } = useRouteMatch();
   const myRole = useGetRole();
+  const room = useGetRoom(room_id);
 
   const { roomNotifications } = useGetRoomNotification({
     enabled: !!me?.user_id,
@@ -101,9 +102,15 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
 
   useEffect(() => {
     socket?.on("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", ({ type }) => {
-      if (isRoleAllowedToReceiveNotification("waiting-room")) {
+      if (
+        isRoleAllowedToReceiveNotification("waiting-room") &&
+        room.room_name
+      ) {
         if (type === "add") {
-          pushNotification({ body: "New user is requesting to join room" });
+          pushNotification({
+            body: `Room ${room.room_name} has new participant requesting to join`,
+            link: `${window.origin}/room/${room.room_id}/waiting-room`,
+          });
           socket?.emit("UPDATE_ROOM_NOTIFICATION", {
             user_id: me?.user_id,
             room_id,
@@ -123,7 +130,7 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
     return () => {
       socket?.off("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", () => {});
     };
-  }, [myRole]);
+  }, [myRole, room]);
 
   return (
     <div className={styled.sidebar}>

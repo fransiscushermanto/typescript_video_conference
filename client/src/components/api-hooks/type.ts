@@ -1,3 +1,4 @@
+import { User } from "firebase/auth";
 import { DocumentData, DocumentSnapshot } from "firebase/firestore";
 import { IFirestoreOnSnapshotArguments } from "../../firebase/config";
 import { UserModel } from "../Providers/RoomProvider";
@@ -40,8 +41,11 @@ export interface PeerOfferModel {
 }
 
 export interface RoomMeetingModel {
+  meeting_id: string;
   offer: PeerOfferModel;
   meeting_name: string;
+  created_by: User;
+  created_at: Date;
 }
 
 export interface RoomNotificationModel {

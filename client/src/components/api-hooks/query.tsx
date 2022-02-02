@@ -13,12 +13,9 @@ import { callAllFunctions } from "../helper";
 import { MessageContext } from "../Providers/MessageProvider";
 import {
   ParticipantType,
-  QueryOptions,
   RoomMeetingModel,
   RoomModel,
   RoomNotificationModel,
-  RoomStatus,
-  UserInfoModel,
   UserInWaitingRoomModel,
 } from "./type";
 
@@ -61,10 +58,7 @@ export function useGetRooms(
   const [messages, setMessages] = useContext(MessageContext);
 
   useEffect(() => {
-    socket?.on("UPDATE_USER_ROOMS", (data) => {
-      console.log("UPDATE_USER_ROOMS", data);
-      refetch();
-    });
+    socket?.on("UPDATE_USER_ROOMS", refetch);
 
     return () => {
       socket?.off("UPDATE_USER_ROOMS", () => {});

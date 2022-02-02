@@ -1,8 +1,10 @@
 import { css, cx } from "@emotion/css";
+import { format } from "date-fns";
 import React, { useRef, useState } from "react";
 import { useMeasure } from "../../../hooks";
 import { useGetRoomMeetings } from "../../api-hooks";
 import { Close } from "../../Shapes";
+import { groupMeetingByDate } from "./helper";
 import MeetingCard from "./MeetingCard";
 import NewMeetingForm from "./NewMeetingForm";
 
@@ -32,6 +34,25 @@ const styled = {
       height: 100%;
       overflow-y: auto;
       width: 100%;
+      .date-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.625rem;
+        .text {
+          white-space: nowrap;
+          margin: 0 1.25rem;
+          font-size: 0.875rem;
+          color: rgba(255, 255, 255, 0.4);
+        }
+        .line {
+          width: 100%;
+          height: 1px;
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+      }
+      .date-group-meetings {
+        margin-bottom: 0.625rem;
+      }
     }
     .create-meeting-modal {
       .modal-content {
@@ -52,6 +73,11 @@ function Home() {
   const [openModal, setOpenModal] = useState(false);
 
   const { roomMeetings } = useGetRoomMeetings({ enabled: true });
+
+  const groupedRoomMeetings = React.useMemo(
+    () => groupMeetingByDate(roomMeetings),
+    [roomMeetings],
+  );
 
   function handleOpenModal() {
     setOpenModal(true);
@@ -74,16 +100,25 @@ function Home() {
       <div
         className={cx("meeting-list", styled.meetingListWrapper(bounds.height))}
       >
-        <ul>
-          {roomMeetings &&
-            Object.entries(roomMeetings).map(([meeting_id, value]) => (
-              <MeetingCard
-                key={meeting_id}
-                meeting_id={meeting_id}
-                meeting_name={value.meeting_name}
-              />
-            ))}
-        </ul>
+        {groupedRoomMeetings &&
+          groupedRoomMeetings.map(({ date, meetings }) => {
+            return (
+              <React.Fragment key={date}>
+                <div className="date-group">
+                  <span className="line"></span>
+                  <span className="text">
+                    {format(new Date(date), "eeee, dd MMM yyyy")}
+                  </span>
+                  <span className="line"></span>
+                </div>
+                <ul className="date-group-meetings">
+                  {meetings.map((meeting) => (
+                    <MeetingCard key={meeting.meeting_id} {...meeting} />
+                  ))}
+                </ul>
+              </React.Fragment>
+            );
+          })}
       </div>
 
       {openModal && (

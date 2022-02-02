@@ -4,12 +4,26 @@ const io = require("../../index").io;
 const { user_sockets } = require("../utils/Utils");
 
 module.exports = function (socket) {
+  io.on("connect", () => {
+    console.log(`${socket.id} is connected`);
+  });
+
   socket.on("disconnect", () => {
+    if (user_sockets) {
+      const [user_id] =
+        Object.entries(user_sockets || {}).find(
+          ([, user_socket_id]) => user_socket_id === socket.id,
+        ) || [];
+      delete user_sockets[user_id];
+    }
+
     console.log(`${socket.id} is disconnected`);
   });
 
   socket.on("LIST_USER_SOCKET", ({ me }) => {
-    if (!user_sockets[me.user_id]) user_sockets[me.user_id] = socket.id;
+    if (!user_sockets[me.user_id]) {
+      user_sockets[me.user_id] = socket.id;
+    }
   });
 
   socket.on("JOIN_ROOM", ({ room_id, me }) => {

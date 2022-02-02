@@ -12,6 +12,7 @@ import { AuthProvider } from "./components/Providers/AuthProvider";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ReactQueryDevtools } from "react-query/devtools";
 import GlobalStyles from "./styles/app";
+import { SocketProvider } from "./components/Providers/SocketProvider";
 
 const queryClient = new QueryClient();
 
@@ -20,11 +21,13 @@ ReactDOM.render(
     <QueryClientProvider client={queryClient}>
       <FirebaseProvider>
         <RoomProvider>
-          <AuthProvider>
-            <MessageProvider>
-              <App />
-            </MessageProvider>
-          </AuthProvider>
+          <SocketProvider>
+            <AuthProvider>
+              <MessageProvider>
+                <App />
+              </MessageProvider>
+            </AuthProvider>
+          </SocketProvider>
         </RoomProvider>
       </FirebaseProvider>
       {process.env.NODE_ENV === "development" && <ReactQueryDevtools />}

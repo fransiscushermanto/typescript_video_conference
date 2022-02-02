@@ -98,6 +98,7 @@ export function useCreateRoomMeeting(
     any,
     any,
     {
+      user_id: string;
       room_id: string;
       meeting_name: string;
       offer: PeerOfferModel;
@@ -107,9 +108,30 @@ export function useCreateRoomMeeting(
   return useMutation<
     any,
     any,
-    { room_id: string; meeting_name: string; offer: PeerOfferModel }
+    {
+      room_id: string;
+      user_id: string;
+      meeting_name: string;
+      offer: PeerOfferModel;
+    }
   >(async (payload) => {
     const res = await axios.post("/meetings/create", payload);
     return res.data;
   }, options);
+}
+
+export function useDeleteRoomMeeting(
+  options: UseMutationOptions<
+    any,
+    any,
+    { room_id: string; meeting_id: string }
+  > = {},
+) {
+  return useMutation<any, any, { room_id: string; meeting_id: string }>(
+    async ({ room_id, meeting_id }) => {
+      const res = await axios.delete(`/meetings/${room_id}/${meeting_id}`);
+      return res.data;
+    },
+    options,
+  );
 }

@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useParams } from "react-router-dom";
-import { useRTC } from "../../../hooks";
+import { useMe, useRTC } from "../../../hooks";
 import { useCreateRoomMeeting } from "../../api-hooks";
 
 interface IProps {
@@ -34,6 +34,7 @@ const styled = {
 };
 
 function NewMeetingForm({ handleCloseModal }: IProps) {
+  const [me] = useMe();
   const { room_id } = useParams<{ room_id }>();
   const pc = useRTC();
   const { register, errors, handleSubmit } = useForm({
@@ -63,6 +64,7 @@ function NewMeetingForm({ handleCloseModal }: IProps) {
     };
 
     mutate({
+      user_id: me.user_id,
       room_id,
       ...formData,
       offer,

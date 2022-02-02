@@ -9,3 +9,4 @@ export { default as useRTC } from "./use-rtc";
 export { default as useSocket } from "./use-socket";
 export { default as useGetRole } from "./use-get-role";
 export { default as useMeasure } from "./use-measure";
+export { default as useGetRoom } from "./use-get-room";
