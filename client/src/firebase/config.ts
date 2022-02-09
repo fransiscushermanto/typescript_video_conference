@@ -82,9 +82,14 @@ class Firebase {
     );
   }
 
-  getRoomMeetings(observer?: IFirestoreOnSnapshotArguments) {
+  getRoomMeetings(room_id, observer?: IFirestoreOnSnapshotArguments) {
     return onSnapshot(
-      query(collection(this.firestore, Collections.room_meetings)),
+      query(
+        collection(
+          this.firestore,
+          `${Collections.rooms}/${room_id}/${Collections.room_meetings}`,
+        ),
+      ),
       observer,
     );
   }

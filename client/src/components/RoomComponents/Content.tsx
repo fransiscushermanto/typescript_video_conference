@@ -4,6 +4,8 @@ import Participant from "./participants/Participant";
 import WaitingRoom from "./waitingRoom/WaitingRoom";
 import Home from "./home/Home";
 import MeetingRoom from "./meeting/MeetingRoom";
+import { memo } from "react";
+import { MeetingRoomProvider } from "../Providers/MeetingRoomProvider";
 
 const styled = {
   root: css`
@@ -33,7 +35,11 @@ function Content() {
       case "waiting-room":
         return <WaitingRoom />;
       case "meeting":
-        return <MeetingRoom />;
+        return (
+          <MeetingRoomProvider>
+            <MeetingRoom />
+          </MeetingRoomProvider>
+        );
       default:
         return <div></div>;
     }
@@ -42,4 +48,4 @@ function Content() {
   return <div className={styled.root}>{renderContent()}</div>;
 }
 
-export default Content;
+export default memo(Content);

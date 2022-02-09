@@ -1,7 +1,6 @@
 import { User } from "firebase/auth";
 import { DocumentData, DocumentSnapshot } from "firebase/firestore";
 import { IFirestoreOnSnapshotArguments } from "../../firebase/config";
-import { UserModel } from "../Providers/RoomProvider";
 
 export enum RoomStatus {
   PENDING = "pending",
@@ -13,6 +12,13 @@ export enum ParticipantType {
   HOST = "host",
   CO_HOST = "co-host",
   PARTICIPANT = "participant",
+}
+
+export interface UserModel {
+  user_id?: string;
+  user_name?: string;
+  socket_id?: string;
+  peer_id?: string;
 }
 
 export interface RoomModel {
@@ -52,3 +58,5 @@ export interface RoomNotificationModel {
   "waiting-room": boolean;
   participants: boolean;
 }
+
+export type RCTOfferStatus = "exist" | "create";

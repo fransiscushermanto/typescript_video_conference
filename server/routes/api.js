@@ -15,6 +15,9 @@ router
   .route("/rooms/:room_id/participants/waiting")
   .get(RoomController.getUsersInWaitingRoom);
 router
+  .route("/rooms/:room_id/meetings/verify")
+  .post(MeetingController.checkMeeting);
+router
   .route("/rooms/:room_id/participants/waiting/:user_id")
   .post(RoomController.updateParticipantsInWaitingRoom);
 router.route("/:user_id/rooms").get(RoomController.getRooms);

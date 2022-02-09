@@ -135,3 +135,23 @@ export function useDeleteRoomMeeting(
     options,
   );
 }
+
+export function useCheckRoomMeeting(
+  options: UseMutationOptions<any, any, { room_id; meeting_id }> = {},
+) {
+  return useMutation<any, any, { room_id; meeting_id }>(
+    async ({ room_id, meeting_id }) => {
+      const res = await axios.post(`/rooms/${room_id}/meetings/verify`, {
+        meeting_id,
+      });
+      return res.data;
+    },
+    {
+      retry: (failureCount, error) => {
+        const { status } = error.response;
+        return failureCount < 2 && status !== 404;
+      },
+      ...options,
+    },
+  );
+}

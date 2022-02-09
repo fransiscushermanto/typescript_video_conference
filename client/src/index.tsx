@@ -3,7 +3,6 @@ import ReactDOM from "react-dom";
 import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
-import { RoomProvider } from "./components/Providers/RoomProvider";
 import { MessageProvider } from "./components/Providers/MessageProvider";
 
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
@@ -20,15 +19,13 @@ ReactDOM.render(
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
       <FirebaseProvider>
-        <RoomProvider>
-          <SocketProvider>
-            <AuthProvider>
-              <MessageProvider>
-                <App />
-              </MessageProvider>
-            </AuthProvider>
-          </SocketProvider>
-        </RoomProvider>
+        <SocketProvider>
+          <AuthProvider>
+            <MessageProvider>
+              <App />
+            </MessageProvider>
+          </AuthProvider>
+        </SocketProvider>
       </FirebaseProvider>
       {process.env.NODE_ENV === "development" && <ReactQueryDevtools />}
     </QueryClientProvider>

@@ -1,12 +1,12 @@
 export { default as usePrevious } from "./use-previous";
 export { default as useTimeout } from "./use-timeout";
 export { default as useInterval } from "./use-interval";
-export { default as useRoom } from "./use-room";
+export { default as useMeetingRoom } from "./use-meeting-room";
 export { default as useFirebase } from "./use-firebase";
 export { default as useAuth } from "./use-auth";
 export { default as useMe } from "./use-me";
-export { default as useRTC } from "./use-rtc";
 export { default as useSocket } from "./use-socket";
 export { default as useGetRole } from "./use-get-role";
 export { default as useMeasure } from "./use-measure";
 export { default as useGetRoom } from "./use-get-room";
+export { default as useRoomSocket } from "./use-room-socket";

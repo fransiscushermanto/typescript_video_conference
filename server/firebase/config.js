@@ -76,21 +76,33 @@ class FirebaseAdmin {
 
   async getRoomMeetings(room_id) {
     const res = await this.firestore
-      .collection(collections.room_meetings)
+      .collection(collections.rooms)
       .doc(room_id)
+      .collection(collections.room_meetings)
       .get();
-    return res.data()
-      ? await Promise.all(
-          Object?.entries(res.data())
-            .filter(([, values]) => !values.deleted_at)
-            .map(async ([meeting_id, values]) => {
-              values.created_by = await this.getUser(values.created_by);
-              values.created_at = values.created_at.toDate();
-              values.meeting_id = meeting_id;
-              return values;
-            }),
-        )
-      : [];
+    const meetings = await Promise.all(
+      res.docs.map(async (meeting) => {
+        const { created_by, created_at, ...resData } = meeting.data();
+        return {
+          meeting_id: meeting.id,
+          created_by: await this.getUser(created_by),
+          created_at: created_at.toDate(),
+          ...resData,
+        };
+      }),
+    );
+    return meetings;
+  }
+
+  async getRoomMeeting(room_id, meeting_id) {
+    const res = await this.firestore
+      .collection(collections.rooms)
+      .doc(room_id)
+      .collection(collections.room_meetings)
+      .doc(meeting_id)
+      .get();
+
+    return res.data();
   }
 
   async getWaitingRoomUsers(room_id) {
@@ -481,35 +493,21 @@ class FirebaseAdmin {
     });
   }
 
-  async createMeeting(room_id, user_id, meeting_name, offer) {
+  async createMeeting(room_id, user_id, meeting_name) {
     const meetingID = uuid.v4();
     await new Promise(async (resolve) => {
-      const prevRoomMeetings = await this.getRoomMeetings(room_id);
       const roomMeetingsDoc = this.firestore
-        .collection(collections.room_meetings)
-        .doc(room_id);
+        .collection(collections.rooms)
+        .doc(room_id)
+        .collection(collections.room_meetings);
       const created_at = new Date();
       const created_by = user_id;
 
-      if (prevRoomMeetings.length > 0) {
-        roomMeetingsDoc.update({
-          [meetingID]: {
-            created_by,
-            offer,
-            meeting_name,
-            created_at,
-          },
-        });
-      } else {
-        roomMeetingsDoc.set({
-          [meetingID]: {
-            created_by,
-            offer,
-            meeting_name,
-            created_at,
-          },
-        });
-      }
+      roomMeetingsDoc.doc(meetingID).set({
+        created_by,
+        meeting_name,
+        created_at,
+      });
 
       resolve(true);
     });
@@ -517,20 +515,17 @@ class FirebaseAdmin {
   }
 
   async deleteMeeting(room_id, meeting_id) {
-    const roomMeetings = await this.firestore
-      .collection(collections.room_meetings)
+    await this.firestore
+      .collection(collections.rooms)
       .doc(room_id)
-      .get();
-    const roomMeetingsDoc = this.firestore
       .collection(collections.room_meetings)
-      .doc(room_id);
+      .doc(meeting_id)
+      .delete();
+  }
 
-    await roomMeetingsDoc.update({
-      [meeting_id]: {
-        ...roomMeetings.data()[meeting_id],
-        deleted_at: new Date(),
-      },
-    });
+  async checkMeeting(room_id, meeting_id) {
+    const meeting = await this.getRoomMeeting(room_id, meeting_id);
+    return !!meeting;
   }
 }
 

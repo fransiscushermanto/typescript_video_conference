@@ -58,6 +58,12 @@ export function useGetRooms(
   const [messages, setMessages] = useContext(MessageContext);
 
   useEffect(() => {
+    rooms?.forEach(({ room_id }) => {
+      socket?.emit("JOIN_ROOM", { room_id, me });
+    });
+  }, [rooms, me]);
+
+  useEffect(() => {
     socket?.on("UPDATE_USER_ROOMS", refetch);
 
     return () => {
@@ -286,7 +292,7 @@ export function useGetRoomMeetings(
 
   useEffect(() => {
     if (room_id) {
-      firebase.getRoomMeetings({
+      firebase.getRoomMeetings(room_id, {
         next: async (snapshot: QuerySnapshot<DocumentData>) => {
           snapshot.docChanges().forEach(() => {
             refetch();
@@ -297,7 +303,7 @@ export function useGetRoomMeetings(
 
     return () => {
       if (room_id) {
-        const unsub = firebase.getRoomMeetings();
+        const unsub = firebase.getRoomMeetings(room_id);
         unsub();
       }
     };

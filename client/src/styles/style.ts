@@ -100,15 +100,6 @@ export default css`
           flex-direction: row;
           justify-content: center;
           align-items: center;
-          .video-wrapper {
-            width: 100%;
-            height: auto;
-            display: grid;
-            justify-content: center;
-            align-items: center;
-            grid-template-columns: repeat(auto-fit, minmax(300px, auto));
-            grid-template-rows: repeat(auto-fit, minmax(300px, auto));
-          }
         }
 
         footer {

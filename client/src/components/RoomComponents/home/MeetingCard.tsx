@@ -2,12 +2,12 @@ import { css } from "@emotion/css";
 import * as Popover from "@radix-ui/react-popover";
 import KebabMenuSVG from "../../../assets/kebab-menu.svg";
 import React from "react";
-import { useGetRole } from "../../../hooks";
+import { useGetRole, useRoomSocket } from "../../../hooks";
 import { ParticipantType } from "../../api-hooks/type";
 import { User } from "firebase/auth";
 import { format } from "date-fns";
 import { useDeleteRoomMeeting } from "../../api-hooks";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams, useRouteMatch } from "react-router-dom";
 import { intToRGB, hashCode, getInitialFromString } from "../../helper";
 
 interface IProps {
@@ -133,8 +133,11 @@ function MeetingCard({
   created_at,
 }: IProps) {
   const myRole = useGetRole();
+  const history = useHistory();
+  const { url } = useRouteMatch();
   const { room_id } = useParams<{ room_id }>();
   const { mutate: mutateDeleteRoomMeeting } = useDeleteRoomMeeting();
+  const roomSocket = useRoomSocket();
   const initials = React.useMemo(
     () => getInitialFromString(created_by.displayName),
     [],
@@ -152,6 +155,14 @@ function MeetingCard({
     ],
     [],
   );
+
+  function onJoin() {
+    if (roomSocket.disconnected) {
+      roomSocket.connect();
+    }
+    window.location.href = `${url}/meeting/${meeting_id}`;
+  }
+
   return (
     <div className={styled.root}>
       <div className={styled.profile(intToRGB(hashCode(created_by.uid)))}>
@@ -171,7 +182,9 @@ function MeetingCard({
             <span>{meeting_name}</span>
           </div>
         </div>
-        <div className="join-btn btn btn-success">Join</div>
+        <div className="join-btn btn btn-success" onClick={onJoin}>
+          Join
+        </div>
         <Popover.Root>
           <Popover.Trigger asChild>
             <button

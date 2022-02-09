@@ -1,13 +1,13 @@
 /* eslint-disable import/no-anonymous-default-export */
-import React, { useContext, useEffect, useState } from "react";
+import React, { memo, useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "../../axios-instance";
 import { RouteComponentProps, useRouteMatch } from "react-router-dom";
 import * as H from "history";
 import NotFound from "../NotFound";
 import { MessageContext } from "../Providers/MessageProvider";
-import { useGetRole, useMe, useSocket } from "../../hooks";
-import { useGetRooms } from "../api-hooks";
+import { useGetRole, useMe, useRoomSocket, useSocket } from "../../hooks";
+import { useCheckRoomMeeting, useGetRooms } from "../api-hooks";
 import { menus } from "../RoomComponents/constants";
 
 interface Props extends RouteComponentProps {
@@ -16,43 +16,33 @@ interface Props extends RouteComponentProps {
 
 export default (OriginalComponent) => {
   const MixedComponent: React.FC<Props> = (props) => {
-    const socket = useSocket();
     const myRole = useGetRole();
-    const { path } = useRouteMatch();
-    const { rooms } = useGetRooms();
-    const { menu, meeting_id } = useParams<{ menu; meeting_id }>();
-    const { history } = props;
-
+    const { room_id, menu, meeting_id } =
+      useParams<{ room_id; menu; meeting_id }>();
+    const roomSocket = useRoomSocket();
     const [me] = useMe();
     const [isReady, setIsReady] = useState<boolean>(false);
     const [error, setError] = useState<boolean>(false);
-    useEffect(() => {
-      (async function checkRoom() {
-        console.log(menu);
-        switch (menu) {
-          case "meeting":
-            if (me) {
-              try {
-                setIsReady(true);
-              } catch (error) {
-                if (error.response === undefined) {
-                  return history.replace("/");
-                }
-                const { data } = error.response;
-                if (!data.success) {
-                  setError(true);
-                }
-                setIsReady(true);
-              }
-            }
-            break;
 
-          default:
-            setIsReady(true);
-            break;
-        }
-      })();
-    }, [meeting_id, me, history, rooms]);
+    const { mutate: checkRoomMeeting } = useCheckRoomMeeting({
+      onError: () => {
+        setError(true);
+        setIsReady(true);
+      },
+    });
+
+    useEffect(() => {
+      switch (menu) {
+        case "meeting":
+          checkRoomMeeting({ room_id, meeting_id });
+          setIsReady(true);
+          break;
+
+        default:
+          setIsReady(true);
+          break;
+      }
+    }, [roomSocket]);
 
     if (!isReady) {
       return <></>;

@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import * as H from "history";
 import GoogleSVG from "../assets/google.svg";
-import { useAuth, useFirebase, useRoom, useSocket } from "../hooks";
+import { useAuth, useSocket } from "../hooks";
 
 interface Props extends RouteComponentProps {
   history: H.History<H.LocationState>;
@@ -51,11 +51,6 @@ const styled = {
 
 function Login(props: Props) {
   const { login } = useAuth();
-  const socket = useSocket();
-
-  useEffect(() => {
-    console.log(socket);
-  }, []);
 
   return (
     <div className={styled.wrapper}>

@@ -1,12 +1,9 @@
 require("fs");
 const { admin } = require("../firebase/config");
-const io = require("../../index").io;
-const { user_sockets } = require("../utils/Utils");
+const { user_sockets, rooms } = require("../utils/Utils");
 
-module.exports = function (socket) {
-  io.on("connect", () => {
-    console.log(`${socket.id} is connected`);
-  });
+module.exports = function (socket, io) {
+  console.log(`${socket.id} is connected`);
 
   socket.on("disconnect", () => {
     if (user_sockets) {
@@ -16,7 +13,6 @@ module.exports = function (socket) {
         ) || [];
       delete user_sockets[user_id];
     }
-
     console.log(`${socket.id} is disconnected`);
   });
 
@@ -38,42 +34,4 @@ module.exports = function (socket) {
       console.log("error", error);
     }
   });
-  // socket.on("JOIN_NEW_ROOM", ({ room_id, name, user_id }) => {
-  //   setParticipants({
-  //     user_id: user_id,
-  //     user_name: name,
-  //     room_id,
-  //     socket_id: socket.id,
-  //     role: ParticipantType.HOST,
-  //   });
-  //   socket.join(room_id);
-  // });
-  // socket.on("JOIN_EXIST_ROOM", ({ room_id, name, user_id }) => {
-  //   if (getRoomHost(room_id) === undefined) {
-  //     setParticipants({
-  //       user_id: user_id,
-  //       user_name: name,
-  //       room_id,
-  //       socket_id: socket.id,
-  //       role: ParticipantType.HOST,
-  //     });
-  //   } else {
-  //     setParticipants({
-  //       user_id: user_id,
-  //       user_name: name,
-  //       room_id,
-  //       socket_id: socket.id,
-  //       role: ParticipantType.PARTICIPANT,
-  //     });
-  //   }
-  //   socket.to(room_id).emit("WELCOME", {
-  //     message: `${name} joined the room`,
-  //     room_participants: {
-  //       participants: getRoomParticipants(room_id),
-  //       hosts: getRoomHosts(room_id),
-  //     },
-  //     new_peer_id: peer_id,
-  //   });
-  //   socket.join(room_id);
-  // });
 };

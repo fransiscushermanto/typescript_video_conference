@@ -1,17 +1,8 @@
-import React, {
-  useRef,
-  useEffect,
-  useContext,
-  useCallback,
-  useState,
-} from "react";
-import { Severities } from "../CustomSnackbar";
-import { MessageContext } from "../Providers/MessageProvider";
-import { SocketContext } from "../Providers/SocketProvider";
+import React, { useRef, useEffect, useCallback } from "react";
+import { useMeetingRoom, useRoomSocket } from "../../hooks";
+import { RoomPermission } from "../Providers/MeetingRoomProvider";
 
-interface Props {
-  connectToNewUser: (peerId: string, stream: MediaStream) => void;
-}
+interface Props {}
 
 export const createEmptyAudioTrack = () => {
   const ctx = new AudioContext();
@@ -19,7 +10,7 @@ export const createEmptyAudioTrack = () => {
   const dst = oscillator.connect(ctx.createMediaStreamDestination()) as any;
   oscillator.start();
   const track = dst.stream.getAudioTracks()[0];
-  return Object.assign(track, { enabled: false });
+  return Object.assign(track, { enabled: true });
 };
 
 export const createEmptyVideoTrack = ({ width, height }) => {
@@ -32,70 +23,45 @@ export const createEmptyVideoTrack = ({ width, height }) => {
   const stream = canvas.captureStream();
   const track = stream.getVideoTracks()[0];
 
-  return Object.assign(track, { enabled: false });
+  return Object.assign(track, { enabled: true });
 };
 
 const audioTrack = createEmptyAudioTrack();
 const videoTrack = createEmptyVideoTrack({ width: 640, height: 480 });
 const mediaStream = new MediaStream([audioTrack, videoTrack]);
 
-const VideoHandler: React.FC<Props> = ({ connectToNewUser }) => {
-  const [stream, setStream] = useState<MediaStream>(mediaStream as MediaStream);
-  const socket = useContext(SocketContext);
-  const videoRef = useRef() as any;
-  // const startVideo = useCallback(
-  //   async (permissionType: "mic" | "cam"): Promise<void> => {
-  //     try {
-  //       const video_stream: MediaStream =
-  //         await navigator.mediaDevices.getUserMedia({
-  //           video: permission.camera && { facingMode: "user" },
-  //           audio: permission.microphone,
-  //         });
-  //       setStream(video_stream);
-  //       videoRef.current.srcObject = video_stream;
-  //       videoRef.current.muted = true;
-  //     } catch (error) {
-  //       setPermission(
-  //         permissionType === "mic"
-  //           ? { ...permission, microphone: false }
-  //           : { ...permission, camera: false },
-  //       );
-  //     }
-  //   },
-  //   [permission, setPermission],
-  // );
+const VideoHandler: React.FC<Props> = () => {
+  const {
+    roomState: [room],
+    localVideoRef,
+  } = useMeetingRoom();
+  const permission = room?.room_permission;
 
   useEffect(() => {
-    socket?.on("WELCOME", ({ new_peer_id }) => {
-      connectToNewUser(new_peer_id, stream);
-    });
-  }, [stream]);
+    if (!permission?.camera) {
+      if (localVideoRef.current.srcObject) {
+        (function stopVideo() {
+          const video_stream = localVideoRef.current.srcObject as MediaStream;
+          const tracks: MediaStreamTrack[] = video_stream.getTracks();
+          tracks.forEach((track) => {
+            track.stop();
+          });
 
-  // useEffect(() => {
-  //   startVideo("cam");
-  // }, [permission.camera, socket]);
+          localVideoRef.current.srcObject = null;
+        })();
+      }
+    }
+  }, [permission]);
 
-  // useEffect(() => {
-  //   startVideo("mic");
-  // }, [permission.microphone, socket]);
-
-  // useEffect(() => {
-  //   if (!permission.camera) {
-  //     if (videoRef.current.srcObject) {
-  //       (function stopVideo() {
-  //         const video_stream = videoRef.current.srcObject;
-  //         const tracks: MediaStreamTrack[] = video_stream.getTracks();
-  //         tracks.forEach((track) => {
-  //           track.stop();
-  //         });
-
-  //         videoRef.current.srcObject = null;
-  //       })();
-  //     }
-  //   }
-  // }, [permission]);
-
-  return <video ref={videoRef} muted={true} id="player" autoPlay></video>;
+  return (
+    <video
+      ref={localVideoRef}
+      muted={true}
+      id="player"
+      className="video"
+      autoPlay
+    ></video>
+  );
 };
 
 export default VideoHandler;

@@ -1,8 +1,8 @@
 import { useContext } from "react";
-import { RoomContext } from "../components/Providers/RoomProvider";
+import { AuthContext } from "../components/Providers/AuthProvider";
 
 export default function useMe() {
-  const { meState } = useContext(RoomContext);
+  const { meState } = useContext(AuthContext);
 
   return meState;
 }

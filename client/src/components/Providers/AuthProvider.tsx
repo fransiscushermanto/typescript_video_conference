@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useFirebase, useMe, useRoom, useSocket } from "../../hooks";
+import { useFirebase, useSocket } from "../../hooks";
 import { useHistory } from "react-router-dom";
 import Cookies from "js-cookie";
 import { QueryClient } from "react-query";
+import { UserModel } from "../api-hooks/type";
 
 interface Props {
   children: React.ReactNode;
@@ -12,12 +13,14 @@ interface IAuthContext {
   isLoggedIn?: boolean;
   logout: () => void;
   login: () => void;
+  meState: [UserModel, React.Dispatch<React.SetStateAction<UserModel>>];
 }
 
 const AuthContext = React.createContext<IAuthContext>({
   isLoggedIn: false,
   logout: () => {},
   login: () => {},
+  meState: [{} as UserModel, () => {}],
 });
 
 const AuthProvider: React.FC<Props> = ({ children }) => {
@@ -26,7 +29,7 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
   const history = useHistory();
 
   const socket = useSocket();
-  const [me, setMe] = useMe();
+  const [me, setMe] = useState<UserModel>();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(
     !!Cookies.get("Authorization"),
   );
@@ -76,6 +79,7 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
         isLoggedIn,
         logout,
         login,
+        meState: [me, setMe],
       }}
     >
       {children}

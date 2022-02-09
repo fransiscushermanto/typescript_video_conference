@@ -8,16 +8,12 @@ const cors = require("cors");
 const port = process.env.PORT || 8000;
 const http = require("http").createServer(app);
 const socketIo = require("socket.io");
-const PeerServer = require("peer").PeerServer;
-const peerServer = (module.exports.peerServer = PeerServer({
-  port: 9000 || (window.location.protocol === "https:" ? 443 : 80),
-  path: "/room",
-}));
 const io = (module.exports.io = socketIo(http, {
   cors: {
     origin: "*",
   },
 }));
+const ionsp = (module.exports.ionsp = io.of(/^\/\w+$/));
 
 app.set("socket", io);
 app.use(cors());
@@ -40,7 +36,7 @@ http.listen(port, () => {
 });
 
 const SocketController = require("./server/controller/SocketController");
-const PeerController = require("./server/controller/PeerController");
+const RoomSocketController = require("./server/controller/RoomSocketController");
 
-peerServer.on("connection", PeerController);
-io.on("connection", SocketController);
+io.on("connection", (socket) => SocketController(socket, io));
+ionsp.on("connection", (socket) => RoomSocketController(socket, ionsp));

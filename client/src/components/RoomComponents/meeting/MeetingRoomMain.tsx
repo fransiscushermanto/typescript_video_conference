@@ -5,6 +5,8 @@ import { Info } from "../../Shapes";
 import { css } from "@emotion/css";
 import RoomInfo from "./MeetingRoomInfo";
 import { detectOnBlur } from "../../helper";
+import { useMeetingRoom } from "../../../hooks";
+import MeetingParticipantVideo from "./MeetingParticipantVideo";
 
 interface Props {}
 
@@ -29,6 +31,18 @@ const styled = {
       background-color: rgba(0, 0, 0, 0.6);
     }
   `,
+  videoWrapper: css`
+    width: 100%;
+    height: auto;
+    max-height: calc(100vh - 70px);
+    display: grid;
+    justify-content: center;
+    align-items: center;
+    row-gap: 0.625rem;
+    column-gap: 0.625rem;
+    grid-template-columns: repeat(auto-fit, minmax(auto, 500px));
+    /* grid-template-rows: repeat(auto-fit, minmax(300px, auto)); */
+  `,
   roomInfoIcon: css`
     cursor: pointer;
     width: 1.25rem;
@@ -38,16 +52,10 @@ const styled = {
 
 const MeetingRoomMain: React.FC<Props> = () => {
   const [openRoomInfo, setOpenRoomInfo] = useState(false);
-  const videoWrapperRef = useRef(null);
+  const {
+    participantsState: [participants],
+  } = useMeetingRoom();
   const roomIconRef = useRef(null);
-  const addVideoToStream = (video: HTMLVideoElement, stream: MediaStream) => {
-    video.srcObject = stream;
-    video.addEventListener("loadedmetadata", () => {
-      video.play();
-    });
-    console.log(video);
-    videoWrapperRef.current.append(video);
-  };
 
   useEffect(() => {
     detectOnBlur(roomIconRef, openRoomInfo, setOpenRoomInfo);
@@ -64,8 +72,11 @@ const MeetingRoomMain: React.FC<Props> = () => {
         </button>
         {openRoomInfo && <RoomInfo onClick={() => setOpenRoomInfo(true)} />}
       </div>
-      <div ref={videoWrapperRef} id="video-wrapper" className="video-wrapper">
-        {/* <VideoHandler connectToNewUser={connectToNewUser} /> */}
+      <div id="video-wrapper" className={styled.videoWrapper}>
+        <VideoHandler />
+        {participants?.map((participant, i) => {
+          return <MeetingParticipantVideo key={i} {...participant} />;
+        })}
       </div>
     </div>
   );

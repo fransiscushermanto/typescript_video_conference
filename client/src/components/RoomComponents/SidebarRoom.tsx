@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { memo, useEffect } from "react";
 import { css, cx } from "@emotion/css";
 import { useHistory, useRouteMatch, useParams } from "react-router";
 import {
@@ -165,4 +165,4 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
   );
 }
 
-export default SidebarRoom;
+export default memo(SidebarRoom);

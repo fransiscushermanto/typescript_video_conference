@@ -137,8 +137,8 @@ async function deleteRoom(room_id, user_id) {
   return res;
 }
 
-async function createMeeting(room_id, user_id, meeting_name, offer) {
-  return await admin.createMeeting(room_id, user_id, meeting_name, offer);
+async function createMeeting(room_id, user_id, meeting_name) {
+  return await admin.createMeeting(room_id, user_id, meeting_name);
 }
 
 async function deleteMeeting(room_id, meeting_id) {
@@ -147,6 +147,10 @@ async function deleteMeeting(room_id, meeting_id) {
 
 async function getRoomMeetings(room_id) {
   return await admin.getRoomMeetings(room_id);
+}
+
+async function checkMeeting(room_id, meeting_id) {
+  return await admin.checkMeeting(room_id, meeting_id);
 }
 
 module.exports = {
@@ -165,4 +169,5 @@ module.exports = {
   getRoomMeetings,
   getRoomNotifications,
   user_sockets,
+  checkMeeting,
 };

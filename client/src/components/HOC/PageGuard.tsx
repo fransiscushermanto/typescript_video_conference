@@ -1,11 +1,10 @@
 /* eslint-disable import/no-anonymous-default-export */
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "../../axios-instance";
 import { RouteComponentProps, useRouteMatch } from "react-router-dom";
 import * as H from "history";
 import NotFound from "../NotFound";
-import { MessageContext } from "../Providers/MessageProvider";
 import { useMe, useSocket } from "../../hooks";
 import { useGetRooms } from "../api-hooks";
 
@@ -18,7 +17,7 @@ export default (OriginalComponent) => {
     const socket = useSocket();
     const { path } = useRouteMatch();
     const { rooms } = useGetRooms();
-    const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
+    const { room_id } = useParams<{ room_id }>();
     const { history } = props;
 
     const [me] = useMe();
@@ -58,7 +57,7 @@ export default (OriginalComponent) => {
             break;
         }
       })();
-    }, [meeting_id, me, history, room_id, filterPath, rooms]);
+    }, [me, filterPath]);
 
     if (!isReady) {
       return <></>;
