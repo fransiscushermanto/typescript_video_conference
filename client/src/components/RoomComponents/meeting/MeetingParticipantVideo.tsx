@@ -1,5 +1,6 @@
 import React from "react";
 import { WebRTCUser } from "../../Providers/MeetingRoomProvider";
+import MeetingVideo from "./MeetingVideo";
 
 interface Props extends WebRTCUser {
   muted?: boolean;
@@ -7,16 +8,18 @@ interface Props extends WebRTCUser {
 
 function MeetingParticipantVideo({ stream, muted, user_id }: Props) {
   const ref = React.useRef<HTMLVideoElement>(null);
-  const [isMuted, setIsMuted] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    if (ref.current) ref.current.srcObject = stream;
-    if (muted) setIsMuted(muted);
+    console.log(stream);
+    if (ref.current) {
+      ref.current.srcObject = stream;
+      ref.current.autoplay = stream.active;
+      ref.current.muted = muted;
+    }
   }, [stream, muted]);
 
   return (
-    <div style={{ position: "relative" }}>
-      <video className="video" ref={ref} muted={isMuted} autoPlay />
+    <MeetingVideo ref={ref}>
       <div
         style={{
           position: "absolute",
@@ -27,7 +30,7 @@ function MeetingParticipantVideo({ stream, muted, user_id }: Props) {
       >
         {user_id}
       </div>
-    </div>
+    </MeetingVideo>
   );
 }
 

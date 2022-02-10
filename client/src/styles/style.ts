@@ -224,7 +224,5 @@ export default css`
 
   video {
     background-color: black;
-    width: 100%;
-    height: 100%;
   }
 `;

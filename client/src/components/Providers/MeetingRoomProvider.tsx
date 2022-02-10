@@ -119,7 +119,11 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
       });
       localStreamRef.current = localStream;
       console.log("current localStream", localStreamRef.current);
-      if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = localStream;
+        localVideoRef.current.autoplay = true;
+        localVideoRef.current.muted = true;
+      }
       console.log("roomSocket", roomSocket);
       roomSocket?.emit("JOIN_MEETING_ROOM", {
         room_id,
@@ -208,15 +212,50 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   );
 
   useEffect(() => {
+    if (roomSocket) {
+      getLocalStream();
+    }
+  }, [roomSocket]);
+
+  useEffect(() => {
+    roomSocket?.on(
+      "ALL_PARTICIPANTS",
+      ({ participants }: { participants: Participant[] }) => {
+        console.log("map_particiapnt", participants);
+        participants?.forEach(async (participant) => {
+          console.log("localStream", localStreamRef.current);
+          if (!localStreamRef.current) return;
+          const pc = createPeerConnection(participant);
+          console.log("pc", pc);
+          if (!(pc && roomSocket)) return;
+          console.log("beforeadd pc", pcsRef.current);
+          pcsRef.current = { ...pcsRef.current, [participant.user_id]: pc };
+          console.log("afteradd pc", pcsRef.current);
+          try {
+            console.log("createoffer");
+            const localSdp = await pc.createOffer({
+              offerToReceiveVideo: true,
+              offerToReceiveAudio: true,
+            });
+            console.log("create offer success", participant.user_id);
+            await pc.setLocalDescription(new RTCSessionDescription(localSdp));
+            roomSocket.emit("RTC_OFFER", {
+              meeting_id,
+              sdp: localSdp,
+              offerReceiveID: participant.user_id,
+              ...me,
+            });
+          } catch (error) {
+            console.log("ALL_PARTICIPANTS", error);
+          }
+        });
+      },
+    );
+  }, [roomSocket, meeting_id, createPeerConnection, me]);
+
+  useEffect(() => {
     roomSocket?.on(
       "UPDATE_REMOTE_STREAM",
-      // ({
-      //   participant,
-      //   stream,
-      // }: {
-      //   participant: Participant;
-      //   stream: MediaStream;
-      // }) => {
       ({ participants }: { participants: Participant[] }) => {
         participants.forEach(async (participant) => {
           const pc = pcsRef.current[participant.user_id];
@@ -244,7 +283,8 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
                 offerToReceiveVideo: true,
                 offerToReceiveAudio: true,
               });
-              // await pc.setLocalDescription(new RTCSessionDescription(localSdp));
+              await pc.setLocalDescription(new RTCSessionDescription(localSdp));
+              console.log("success setLocal renegotiate");
               roomSocket.emit("RTC_OFFER_NEGOTIATION", {
                 sdp: localSdp,
                 receiverNegotiationID: participant.user_id,
@@ -257,69 +297,27 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
           const audioTrack = localStreamRef.current?.getAudioTracks?.()[0];
 
-          if (videoTrack) {
-            console.log("newVideoTrack", videoTrack, videoSender);
+          if (videoSender) {
             pc.removeTrack(videoSender);
-            videoSender = pc.addTrack(videoTrack, localStreamRef.current);
           }
-          if (audioTrack) {
-            console.log("newAudioTrack", audioTrack, audioSender);
+          if (audioSender) {
             pc.removeTrack(audioSender);
-            audioSender = pc.addTrack(audioTrack, localStreamRef.current);
           }
 
-          // console.log(videoTrack, audioTrack);
-          // pc.addTrack();
+          if (videoTrack) {
+            videoSender = pc.addTrack(videoTrack, localStreamRef.current);
+          } else {
+            videoSender = undefined;
+          }
+          if (audioTrack) {
+            audioSender = pc.addTrack(audioTrack, localStreamRef.current);
+          } else {
+            audioSender = undefined;
+          }
         });
       },
     );
   }, [roomSocket, me]);
-
-  // useEffect(() => {
-  //   console.log("participants", participants);
-  // }, [participants]);
-
-  useEffect(() => {
-    if (roomSocket) {
-      getLocalStream();
-    }
-  }, [roomSocket]);
-
-  useEffect(() => {
-    roomSocket?.on(
-      "ALL_PARTICIPANTS",
-      ({ participants }: { participants: Participant[] }) => {
-        console.log("map_particiapnt", participants);
-        participants?.forEach(async (participant) => {
-          console.log("localStream", localStreamRef.current);
-          if (!localStreamRef.current) return;
-          const pc = createPeerConnection(participant);
-          console.log("pc", pc);
-          if (!(pc && roomSocket)) return;
-          console.log("beforeadd pc", pcsRef.current);
-          pcsRef.current = { ...pcsRef.current, [participant.user_id]: pc };
-          console.log("afteradd pc", pcsRef.current);
-          try {
-            console.log("createoffer");
-            const localSdp = await pc.createOffer({
-              offerToReceiveVideo: true,
-              offerToReceiveAudio: true,
-            });
-            console.log("create offer success");
-            await pc.setLocalDescription(new RTCSessionDescription(localSdp));
-            roomSocket.emit("RTC_OFFER", {
-              meeting_id,
-              sdp: localSdp,
-              offerReceiveID: participant.user_id,
-              ...me,
-            });
-          } catch (error) {
-            console.log("ALL_PARTICIPANTS", error);
-          }
-        });
-      },
-    );
-  }, [roomSocket, meeting_id, createPeerConnection, me]);
 
   useEffect(() => {
     roomSocket?.on(
@@ -328,10 +326,9 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
         console.log("getoffer");
         const pc = createPeerConnection(resOffer);
         if (!(pc && roomSocket)) return;
-        console.log("pc", pc);
-        console.log("beforeadd pc", pcsRef.current);
+        console.log("getoffer beforeadd pc", pcsRef.current);
         pcsRef.current = { ...pcsRef.current, [resOffer.user_id]: pc };
-        console.log("afteradd pc", pcsRef.current);
+        console.log("getoffer afteradd pc", pcsRef.current);
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(sdp));
           console.log("answer set remote description success");
@@ -359,37 +356,41 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           console.log("getoffernegotiation");
           const pc = pcsRef.current[resOfferNegotiation.user_id];
           await pc.setRemoteDescription(new RTCSessionDescription(sdp));
-          // const localSdp = await pc.createAnswer({
-          //   offerToReceiveVideo: true,
-          //   offerToReceiveAudio: true,
-          // });
-          // await pc.setLocalDescription(new RTCSessionDescription(localSdp));
-          // roomSocket.emit("RTC_ANSWER_NEGOTIATION", {
-          //   sdp: localSdp,
-          //   answerNegotiationID: resOfferNegotiation.user_id,
-          //   ...me,
-          // });
+          console.log("reanswer set remote description success");
+          const localSdp = await pc.createAnswer({
+            offerToReceiveVideo: true,
+            offerToReceiveAudio: true,
+          });
+          console.log("create reanswer success");
+          await pc.setLocalDescription(new RTCSessionDescription(localSdp));
+          console.log("success setlocal reanswer description");
+          roomSocket.emit("RTC_ANSWER_NEGOTIATION", {
+            sdp: localSdp,
+            answerNegotiationID: resOfferNegotiation.user_id,
+            ...me,
+          });
         } catch (error) {
           console.log("getoffernegotiation error", error);
         }
       },
     );
 
-    // roomSocket?.on(
-    //   "RTC_GET_ANSWER_NEGOTIATION",
-    //   ({ sdp, ...resAnswerNegotiation }) => {
-    //     try {
-    //       console.log("getanswernegotiation");
-    //       const pc: RTCPeerConnection =
-    //         pcsRef.current[resAnswerNegotiation.user_id];
+    roomSocket?.on(
+      "RTC_GET_ANSWER_NEGOTIATION",
+      async ({ sdp, ...resAnswerNegotiation }) => {
+        try {
+          console.log("getanswernegotiation");
+          const pc: RTCPeerConnection =
+            pcsRef.current[resAnswerNegotiation.user_id];
 
-    //       if (!pc) return;
-    //       pc.setRemoteDescription(new RTCSessionDescription(sdp));
-    //     } catch (error) {
-    //       console.log("answernegotiation error", error);
-    //     }
-    //   },
-    // );
+          if (!pc) return;
+          await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+          console.log("success reset remote sdp");
+        } catch (error) {
+          console.log("answernegotiation error", error);
+        }
+      },
+    );
 
     roomSocket?.on(
       "RTC_GET_ANSWER",

@@ -1,12 +1,12 @@
 import Peer from "peerjs";
 import React, { useEffect, useRef, useState } from "react";
-import VideoHandler from "../../Handlers/VideoHandler";
 import { Info } from "../../Shapes";
 import { css } from "@emotion/css";
 import RoomInfo from "./MeetingRoomInfo";
 import { detectOnBlur } from "../../helper";
 import { useMeetingRoom } from "../../../hooks";
 import MeetingParticipantVideo from "./MeetingParticipantVideo";
+import MyVideo from "./MyVideo";
 
 interface Props {}
 
@@ -35,13 +35,12 @@ const styled = {
     width: 100%;
     height: auto;
     max-height: calc(100vh - 70px);
-    display: grid;
+    display: flex;
     justify-content: center;
     align-items: center;
-    row-gap: 0.625rem;
-    column-gap: 0.625rem;
-    grid-template-columns: repeat(auto-fit, minmax(auto, 500px));
-    /* grid-template-rows: repeat(auto-fit, minmax(300px, auto)); */
+    flex-wrap: wrap;
+
+    overflow-y: auto;
   `,
   roomInfoIcon: css`
     cursor: pointer;
@@ -73,7 +72,7 @@ const MeetingRoomMain: React.FC<Props> = () => {
         {openRoomInfo && <RoomInfo onClick={() => setOpenRoomInfo(true)} />}
       </div>
       <div id="video-wrapper" className={styled.videoWrapper}>
-        <VideoHandler />
+        <MyVideo />
         {participants?.map((participant, i) => {
           return <MeetingParticipantVideo key={i} {...participant} />;
         })}

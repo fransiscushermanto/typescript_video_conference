@@ -38,14 +38,6 @@ const MeetingRoomFooter = () => {
   const updateStream = useCallback(
     async (permissionType?: "mic" | "cam"): Promise<void> => {
       try {
-        console.log({
-          video:
-            permissionType === "cam" ? !permission.camera : permission.camera,
-          audio:
-            permissionType === "mic"
-              ? !permission.microphone
-              : permission.microphone,
-        });
         const video_stream: MediaStream =
           await navigator.mediaDevices.getUserMedia({
             video:
@@ -58,13 +50,6 @@ const MeetingRoomFooter = () => {
         localStreamRef.current = video_stream;
         localVideoRef.current.srcObject = video_stream;
         localVideoRef.current.muted = true;
-        console.log("testes", {
-          ...permission,
-          ...(permissionType === "cam" && { camera: !permission.camera }),
-          ...(permissionType === "mic" && {
-            microphone: !permission.microphone,
-          }),
-        });
         setPermission({
           ...permission,
           ...(permissionType === "cam" && { camera: !permission.camera }),
@@ -72,13 +57,16 @@ const MeetingRoomFooter = () => {
             microphone: !permission.microphone,
           }),
         });
-        console.log(video_stream.getTracks());
         roomSocket.emit("LOCAL_STREAM_UPDATE");
       } catch (error) {
         setPermission({
-          microphone: !(permissionType === "mic"),
-          camera: !(permissionType === "cam"),
+          microphone: false,
+          camera: false,
         });
+        localStreamRef.current = null;
+        localVideoRef.current.srcObject = null;
+        localVideoRef.current.muted = true;
+        roomSocket.emit("LOCAL_STREAM_UPDATE");
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
