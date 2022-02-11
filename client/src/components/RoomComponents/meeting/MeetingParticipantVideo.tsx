@@ -8,9 +8,21 @@ interface Props extends WebRTCUser {
 
 function MeetingParticipantVideo({ stream, muted, user_id }: Props) {
   const ref = React.useRef<HTMLVideoElement>(null);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
+  const isAudioOnly = React.useMemo(
+    () =>
+      stream.getTracks().length === 1 && stream.getTracks()[0].kind === "audio",
+    [stream],
+  );
 
   React.useEffect(() => {
-    console.log(stream);
+    if (isAudioOnly) {
+      audioRef.current.srcObject = stream;
+      audioRef.current.autoplay = stream.active;
+      audioRef.current.volume = 1;
+      console.log(audioRef);
+    }
+
     if (ref.current) {
       ref.current.srcObject = stream;
       ref.current.autoplay = stream.active;
@@ -20,6 +32,7 @@ function MeetingParticipantVideo({ stream, muted, user_id }: Props) {
 
   return (
     <MeetingVideo ref={ref}>
+      {isAudioOnly && <audio ref={audioRef} />}
       <div
         style={{
           position: "absolute",

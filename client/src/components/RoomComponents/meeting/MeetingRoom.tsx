@@ -4,10 +4,10 @@ import RoomHeader from "./MeetingRoomHeader";
 import RoomMain from "./MeetingRoomMain";
 import { Severities } from "../../CustomSnackbar";
 import { MessageContext } from "../../Providers/MessageProvider";
-import { useRoomSocket, useSocket } from "../../../hooks";
+import { useMediaQuery, useRoomSocket } from "../../../hooks";
 import { useParams } from "react-router-dom";
 import { css, cx } from "@emotion/css";
-import { RCTOfferStatus } from "../../api-hooks/type";
+import { setMobileCSSHeightProperty } from "../../helper";
 
 interface Props {}
 
@@ -22,16 +22,36 @@ const MeetingRoom: React.FC<Props> = () => {
   const [messages, setMessages] = useContext(MessageContext);
   const roomSocket = useRoomSocket();
   const { meeting_id } = useParams<{ meeting_id }>();
+  const isNotDesktop = useMediaQuery(`(max-width: 768px)`);
 
   useEffect(() => {
-    // socket.on("RTC_OFFER", ({ status }: { status: RCTOfferStatus }) => {
-    //   console.log("rtc offer status", status);
-    // });
+    if (isNotDesktop) {
+      setMobileCSSHeightProperty();
+    }
 
-    roomSocket?.on("NEW_PARTICIPANT", ({ message }) => {
-      console.log(message);
+    window.addEventListener("resize", () => {
+      if (isNotDesktop) {
+        setMobileCSSHeightProperty();
+      }
     });
-  }, [roomSocket]);
+
+    return () => {
+      window.removeEventListener("resize", () => {});
+    };
+  }, [isNotDesktop]);
+
+  useEffect(() => {
+    roomSocket?.on("NEW_PARTICIPANT", ({ message }) => {
+      setMessages([
+        ...messages,
+        {
+          id: Date.now(),
+          message: message,
+          severity: Severities.SUCCESS,
+        },
+      ]);
+    });
+  }, [roomSocket, messages, setMessages]);
 
   return (
     <div className={cx(styled.root, "meeting-room-wrapper wrapper")}>

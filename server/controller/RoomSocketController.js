@@ -39,7 +39,8 @@ module.exports = function (socket, ionsp) {
       .emit("ALL_PARTICIPANTS", { participants: participantInThisMeetingRoom });
   });
 
-  socket.on("RTC_OFFER", ({ offerReceiveID, meeting_id, ...resData }) => {
+  socket.on("RTC_OFFER", ({ offerReceiveID, ...resData }) => {
+    const meeting_id = socketToRoom[socket.id];
     const receiver_socket_id =
       participants[meeting_id]?.find(
         (participant) => participant.user_id === offerReceiveID,
@@ -49,7 +50,8 @@ module.exports = function (socket, ionsp) {
       .emit("RTC_GET_OFFER", { ...resData, socket_id: socket.id });
   });
 
-  socket.on("RTC_ANSWER", ({ answerReceiveID, meeting_id, ...resData }) => {
+  socket.on("RTC_ANSWER", ({ answerReceiveID, ...resData }) => {
+    const meeting_id = socketToRoom[socket.id];
     const receiver_socket_id =
       participants[meeting_id]?.find(
         (participant) => participant.user_id === answerReceiveID,
@@ -60,20 +62,18 @@ module.exports = function (socket, ionsp) {
       .emit("RTC_GET_ANSWER", { ...resData, socket_id: socket.id });
   });
 
-  socket.on(
-    "RTC_CANDIDATE",
-    ({ meeting_id, candidateReceiveID, ...resData }) => {
-      const receiver_socket_id =
-        participants[meeting_id]?.find(
-          (participant) => participant.user_id === candidateReceiveID,
-        )?.socket_id || "";
+  socket.on("RTC_CANDIDATE", ({ candidateReceiveID, ...resData }) => {
+    const meeting_id = socketToRoom[socket.id];
+    const receiver_socket_id =
+      participants[meeting_id]?.find(
+        (participant) => participant.user_id === candidateReceiveID,
+      )?.socket_id || "";
 
-      ionsp.to(receiver_socket_id).emit("RTC_GET_CANDIDATE", {
-        ...resData,
-        socket_id: socket.id,
-      });
-    },
-  );
+    ionsp.to(receiver_socket_id).emit("RTC_GET_CANDIDATE", {
+      ...resData,
+      socket_id: socket.id,
+    });
+  });
 
   socket.on("LOCAL_STREAM_UPDATE", () => {
     const meeting_id = socketToRoom[socket.id];

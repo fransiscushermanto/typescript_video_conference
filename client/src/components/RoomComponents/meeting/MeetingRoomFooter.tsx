@@ -6,7 +6,10 @@ import NoMicrophoneSVG from "../../../assets/no-microphone.svg";
 import { MessageContext } from "../../Providers/MessageProvider";
 import { Severities } from "../../CustomSnackbar";
 import { useMeetingRoom, useRoomSocket } from "../../../hooks";
-import { RoomPermission } from "../../Providers/MeetingRoomProvider";
+import {
+  RoomPermission,
+  videoConstraints,
+} from "../../Providers/MeetingRoomProvider";
 
 const MeetingRoomFooter = () => {
   const [messages, setMessages] = React.useContext(MessageContext);
@@ -41,7 +44,9 @@ const MeetingRoomFooter = () => {
         const video_stream: MediaStream =
           await navigator.mediaDevices.getUserMedia({
             video:
-              permissionType === "cam" ? !permission.camera : permission.camera,
+              permissionType === "cam"
+                ? !permission.camera && videoConstraints
+                : permission.camera && videoConstraints,
             audio:
               permissionType === "mic"
                 ? !permission.microphone

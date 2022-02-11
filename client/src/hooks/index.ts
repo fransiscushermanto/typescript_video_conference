@@ -10,3 +10,4 @@ export { default as useGetRole } from "./use-get-role";
 export { default as useMeasure } from "./use-measure";
 export { default as useGetRoom } from "./use-get-room";
 export { default as useRoomSocket } from "./use-room-socket";
+export { default as useMediaQuery } from "./use-media-query";

@@ -93,15 +93,6 @@ export default css`
           align-items: center;
         }
 
-        .main {
-          position: relative;
-          flex: 1;
-          display: flex;
-          flex-direction: row;
-          justify-content: center;
-          align-items: center;
-        }
-
         footer {
           height: auto;
           min-height: 70px;

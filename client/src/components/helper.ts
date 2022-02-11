@@ -172,3 +172,10 @@ export function intToRGB(i) {
 
   return "#" + "00000".substring(0, 6 - c.length) + c;
 }
+
+export function setMobileCSSHeightProperty() {
+  document.documentElement.style.setProperty(
+    "--vh",
+    `${window.innerHeight * 0.01}px`,
+  );
+}

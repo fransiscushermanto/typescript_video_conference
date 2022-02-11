@@ -11,7 +11,19 @@ import MyVideo from "./MyVideo";
 interface Props {}
 
 const styled = {
+  root: css`
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+
+    max-height: calc(calc(var(--vh, 1vh) * 100) - 70px);
+    overflow-y: auto;
+  `,
   roomInfoIconWrapper: css`
+    z-index: 1;
     position: absolute;
     left: 1.25rem;
     top: 2%;
@@ -34,7 +46,7 @@ const styled = {
   videoWrapper: css`
     width: 100%;
     height: auto;
-    max-height: calc(100vh - 70px);
+    max-height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -61,7 +73,7 @@ const MeetingRoomMain: React.FC<Props> = () => {
   }, [openRoomInfo]);
 
   return (
-    <div className="main">
+    <div className={styled.root}>
       <div ref={roomIconRef} className={styled.roomInfoIconWrapper}>
         <button
           className={styled.roomInfoButton}
