@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useRoomSocket } from "../../../hooks";
 import { WebRTCUser } from "../../Providers/MeetingRoomProvider";
 import MeetingVideo from "./MeetingVideo";
 
@@ -15,20 +16,19 @@ function MeetingParticipantVideo({ stream, muted, user_id }: Props) {
     [stream],
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isAudioOnly) {
       audioRef.current.srcObject = stream;
       audioRef.current.autoplay = stream.active;
       audioRef.current.volume = 1;
-      console.log(audioRef);
     }
 
     if (ref.current) {
-      ref.current.srcObject = stream;
-      ref.current.autoplay = stream.active;
-      ref.current.muted = muted;
+      ref.current.srcObject = !isAudioOnly ? stream : undefined;
+      ref.current.autoplay = !isAudioOnly && stream.active;
+      ref.current.muted = isAudioOnly || muted;
     }
-  }, [stream, muted]);
+  }, [stream, muted, isAudioOnly]);
 
   return (
     <MeetingVideo ref={ref}>

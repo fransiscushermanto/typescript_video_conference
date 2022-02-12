@@ -51,7 +51,7 @@ const MeetingRoom: React.FC<Props> = () => {
         },
       ]);
     });
-  }, [roomSocket, messages, setMessages]);
+  }, [roomSocket, setMessages]);
 
   return (
     <div className={cx(styled.root, "meeting-room-wrapper wrapper")}>

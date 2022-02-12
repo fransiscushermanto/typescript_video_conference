@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMe, useRoomSocket } from "../../hooks";
 import useCallbackRef from "../../hooks/use-callback-ref";
+import { generateEmptyMediaTrack } from "../helper";
 
 const servers = {
   iceServers: [
@@ -94,30 +95,7 @@ const MeetingRoomContext = React.createContext<ContextType>({
   callState: [{}, () => {}],
 });
 
-export const createEmptyAudioTrack = () => {
-  const ctx = new AudioContext();
-  const oscillator = ctx.createOscillator();
-  const dst = oscillator.connect(ctx.createMediaStreamDestination()) as any;
-  oscillator.start();
-  const track = dst.stream.getAudioTracks()[0];
-  return Object.assign(track, { enabled: false });
-};
-
-export const createEmptyVideoTrack = ({ width, height }) => {
-  const canvas = Object.assign(document.createElement("canvas"), {
-    width,
-    height,
-  }) as any;
-  canvas.getContext("2d").fillRect(0, 0, width, height);
-  const stream = canvas.captureStream();
-  const track = stream.getVideoTracks()[0];
-
-  return Object.assign(track, { enabled: false });
-};
-
-const audioTrack = createEmptyAudioTrack();
-const videoTrack = createEmptyVideoTrack({ width: 960, height: 720 });
-const mediaStream = new MediaStream([audioTrack, videoTrack]);
+const emptyMediaStream = generateEmptyMediaTrack();
 
 const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   const roomSocket = useRoomSocket();
@@ -129,7 +107,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   const [me] = useMe();
   const [room, setRoom] = useState<RoomModel>(
     JSON.parse(sessionStorage.getItem("room")) || {
-      room_permission: { camera: true, microphone: true },
+      room_permission: { camera: false, microphone: true },
     },
   );
   const [participants, setParticipants] = useState<WebRTCUser[]>([]);
@@ -143,12 +121,9 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
       console.log("getLocalStream");
       const localStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: {
-          width: { min: 640, ideal: 960, max: 1920 },
-          height: { min: 576, ideal: 720, max: 1080 },
-          facingMode: "user",
-        },
+        video: false,
       });
+      console.log("stream local", localStream.getTracks());
       localStreamRef.current = localStream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = localStream;
@@ -156,7 +131,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
         localVideoRef.current.muted = true;
       }
     } catch (error) {
-      localStreamRef.current = mediaStream;
+      localStreamRef.current = emptyMediaStream;
       setRoom({
         ...room,
         room_permission: {
@@ -198,7 +173,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
         };
 
         pc.ontrack = (e) => {
-          console.log("ontrack success", e.streams);
+          console.log("createPeerconnection ontrack success", e.streams);
           setParticipants((prev) =>
             prev
               .filter(
@@ -316,7 +291,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
       "RTC_GET_OFFER_NEGOTIATION",
       async ({ sdp, ...resOfferNegotiation }) => {
         try {
-          console.log("getoffernegotiation");
+          console.log("getoffernegotiation", sdp);
           const pc = pcsRef.current[resOfferNegotiation.user_id];
           await pc.setRemoteDescription(new RTCSessionDescription(sdp));
           console.log("reanswer set remote description success");
@@ -408,7 +383,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           const pc = pcsRef.current[participant.user_id];
           console.log(pcsRef.current, participant.user_id, pc);
           pc.ontrack = (e) => {
-            console.log("ontrack success", e);
+            console.log("update ontrack success", e);
             setParticipants((prev) =>
               prev
                 .filter(
@@ -454,16 +429,13 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
               videoTrack,
               localStreamRef.current,
             );
-          } else {
-            videoSender.current = undefined;
           }
+
           if (audioTrack) {
             audioSender.current = pc.addTrack(
               audioTrack,
               localStreamRef.current,
             );
-          } else {
-            audioSender.current = undefined;
           }
         });
       },

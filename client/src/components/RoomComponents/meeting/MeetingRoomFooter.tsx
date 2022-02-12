@@ -10,6 +10,9 @@ import {
   RoomPermission,
   videoConstraints,
 } from "../../Providers/MeetingRoomProvider";
+import { generateEmptyMediaTrack } from "../../helper";
+
+const emptyMediaTrack = generateEmptyMediaTrack();
 
 const MeetingRoomFooter = () => {
   const [messages, setMessages] = React.useContext(MessageContext);
@@ -49,7 +52,7 @@ const MeetingRoomFooter = () => {
                 : permission.camera && videoConstraints,
             audio:
               permissionType === "mic"
-                ? !permission.microphone
+                ? !permission.microphone && true
                 : permission.microphone,
           });
         localStreamRef.current = video_stream;
@@ -68,7 +71,7 @@ const MeetingRoomFooter = () => {
           microphone: false,
           camera: false,
         });
-        localStreamRef.current = null;
+        localStreamRef.current = emptyMediaTrack;
         localVideoRef.current.srcObject = null;
         localVideoRef.current.muted = true;
         roomSocket.emit("LOCAL_STREAM_UPDATE");
