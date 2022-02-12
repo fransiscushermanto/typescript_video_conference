@@ -66,7 +66,7 @@ function FirstPage(props: Props) {
         </div>
       </div>
       <div className={styled.roomWrapper}>
-        {rooms.map((room, i) => (
+        {rooms?.map((room, i) => (
           <RoomCard key={i} room={room} />
         ))}
       </div>
