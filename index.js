@@ -21,7 +21,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
 if (process.env.NODE_ENV !== "test") {
-  app.use(favicon(path.join(__dirname, "client", "build", "favicon.io")));
   app.use(express.static(path.join(__dirname, "client", "build")));
   app.get("*", function (req, res) {
     const index = path.join(__dirname, "client", "build", "index.html");
