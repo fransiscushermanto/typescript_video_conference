@@ -20,15 +20,16 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static(__dirname));
-if (process.env.NODE_ENV !== "test") {
-  app.use(express.static(path.join(__dirname, "client", "build")));
-  // app.get("*", function (req, res) {
-  //   const index = path.join(__dirname, "client", "build", "index.html");
-  //   res.sendFile(index);
-  // });
-}
 
 app.use("/api", require("./server/routes/api"));
+
+if (process.env.NODE_ENV !== "test") {
+  app.use(express.static(path.join(__dirname, "client", "build")));
+  app.get("*", function (req, res) {
+    const index = path.join(__dirname, "client", "build", "index.html");
+    res.sendFile(index);
+  });
+}
 
 http.listen(port, () => {
   console.log(`Products server listening on port ${port}`);
