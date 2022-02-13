@@ -429,6 +429,8 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
               videoTrack,
               localStreamRef.current,
             );
+          } else {
+            videoSender.current = undefined;
           }
 
           if (audioTrack) {
@@ -436,6 +438,8 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
               audioTrack,
               localStreamRef.current,
             );
+          } else {
+            audioSender.current = undefined;
           }
         });
       },
