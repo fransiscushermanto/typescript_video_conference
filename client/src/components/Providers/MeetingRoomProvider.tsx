@@ -107,7 +107,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   const [me] = useMe();
   const [room, setRoom] = useState<RoomModel>(
     JSON.parse(sessionStorage.getItem("room")) || {
-      room_permission: { camera: false, microphone: true },
+      room_permission: { camera: true, microphone: true },
     },
   );
   const [participants, setParticipants] = useState<WebRTCUser[]>([]);
@@ -121,7 +121,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
       console.log("getLocalStream");
       const localStream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: false,
+        video: videoConstraints,
       });
       console.log("stream local", localStream.getTracks());
       localStreamRef.current = localStream;
