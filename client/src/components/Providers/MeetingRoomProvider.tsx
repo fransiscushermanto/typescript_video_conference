@@ -378,7 +378,13 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   useEffect(() => {
     roomSocket?.on(
       "UPDATE_REMOTE_STREAM",
-      ({ participants }: { participants: Participant[] }) => {
+      ({
+        participants,
+        media,
+      }: {
+        participants: Participant[];
+        media: "cam" | "mic";
+      }) => {
         participants.forEach(async (participant) => {
           const pc = pcsRef.current[participant.user_id];
           console.log(pcsRef.current, participant.user_id, pc);
@@ -418,63 +424,106 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
           const audioTrack = localStreamRef.current?.getAudioTracks?.()[0];
 
-          // if (videoSender.current && !videoTrack) {
-          //   console.log("removing video sender");
-          //   pc.removeTrack(videoSender.current);
-          // }
-
-          // if (audioSender.current && !audioTrack) {
-          //   console.log("removing audio sender");
-          //   pc.removeTrack(audioSender.current);
-          // }
-
-          if (videoTrack) {
-            console.log("adding video");
-            try {
-              videoSender.current.replaceTrack(videoTrack);
-              // videoSender.current = pc.addTrack(
-              //   videoTrack,
-              //   localStreamRef.current,
-              // );
-            } catch (error) {
-              // try {
-              //   pc.removeTrack(videoSender.current);
-              //   videoSender.current = pc.addTrack(
-              //     videoTrack,
-              //     localStreamRef.current,
-              //   );
-              // } catch (error) {
-              //   console.log("adding video 2 err", error);
-              // }
-              console.log("adding video err", error);
+          if (media === "cam") {
+            if (videoSender.current && !videoTrack) {
+              console.log("removing video sender", audioTrack);
+              pc.removeTrack(videoSender.current);
+            } else {
+              console.log("add video track", audioTrack);
+              videoSender.current = pc.addTrack(
+                videoTrack,
+                localStreamRef.current,
+              );
+              if (audioTrack) {
+                audioSender.current = pc.addTrack(
+                  audioTrack,
+                  localStreamRef.current,
+                );
+              }
             }
-          } else {
-            videoSender.current = undefined;
           }
 
-          if (audioTrack) {
-            console.log("adding audio");
-            try {
-              audioSender.current.replaceTrack(audioTrack);
-              // audioSender.current = pc.addTrack(
-              //   audioTrack,
-              //   localStreamRef.current,
-              // );
-            } catch (error) {
-              // try {
-              //   pc.removeTrack(audioSender.current);
-              //   audioSender.current = pc.addTrack(
-              //     audioTrack,
-              //     localStreamRef.current,
-              //   );
-              // } catch (error) {
-              //   console.log("adding audio 2 err", error);
-              // }
-              console.log("adding audio err", error);
+          if (media === "mic") {
+            console.log("mic", audioTrack);
+            if ((audioSender.current && !audioTrack) || !audioTrack.enabled) {
+              console.log("removing audio sender", videoTrack);
+              pc.removeTrack(audioSender.current);
+            } else {
+              console.log("add audio track", videoTrack);
+              audioSender.current = pc.addTrack(
+                audioTrack,
+                localStreamRef.current,
+              );
+              if (videoTrack) {
+                videoSender.current = pc.addTrack(
+                  videoTrack,
+                  localStreamRef.current,
+                );
+              }
             }
-          } else {
-            audioSender.current = undefined;
           }
+
+          console.log("senders", pc.getSenders());
+          console.log("receivers", pc.getReceivers());
+
+          // if (videoTrack) {
+          //   console.log("adding video");
+          //   try {
+          //     const targetSender = pc
+          //       .getSenders()
+          //       .find((sender) => sender.track.kind === videoTrack.kind);
+
+          //     console.log("video targetSender", targetSender, videoTrack);
+          //     // targetSender.replaceTrack(videoTrack);
+
+          //     // videoSender.current = pc.addTrack(
+          //     //   videoTrack,
+          //     //   localStreamRef.current,
+          //     // );
+          //   } catch (error) {
+          //     try {
+          //       pc.removeTrack(videoSender.current);
+          //       videoSender.current = pc.addTrack(
+          //         videoTrack,
+          //         localStreamRef.current,
+          //       );
+          //     } catch (error) {
+          //       console.log("adding video 2 err", error);
+          //     }
+          //     console.log("adding video err", error);
+          //   }
+          // } else {
+          //   videoSender.current = undefined;
+          // }
+
+          // if (audioTrack) {
+          //   console.log("adding audio");
+          //   try {
+          //     const targetSender = pc
+          //       .getSenders()
+          //       .find((sender) => sender.track.kind === audioTrack.kind);
+
+          //     console.log("audio targetSender", targetSender, audioTrack);
+          //     targetSender.replaceTrack(audioTrack);
+          //     // audioSender.current = pc.addTrack(
+          //     //   audioTrack,
+          //     //   localStreamRef.current,
+          //     // );
+          //   } catch (error) {
+          //     try {
+          //       pc.removeTrack(audioSender.current);
+          //       audioSender.current = pc.addTrack(
+          //         audioTrack,
+          //         localStreamRef.current,
+          //       );
+          //     } catch (error) {
+          //       console.log("adding audio 2 err", error);
+          //     }
+          //     console.log("adding audio err", error);
+          //   }
+          // } else {
+          //   audioSender.current = undefined;
+          // }
         });
       },
     );

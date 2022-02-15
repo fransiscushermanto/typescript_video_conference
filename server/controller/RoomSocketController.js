@@ -75,7 +75,7 @@ module.exports = function (socket, ionsp) {
     });
   });
 
-  socket.on("LOCAL_STREAM_UPDATE", () => {
+  socket.on("LOCAL_STREAM_UPDATE", ({ media }) => {
     const meeting_id = socketToRoom[socket.id];
     const meeting = participants[meeting_id];
     const participantInThisMeetingRoom = meeting?.filter(
@@ -83,6 +83,7 @@ module.exports = function (socket, ionsp) {
     );
     socket.emit("UPDATE_REMOTE_STREAM", {
       participants: participantInThisMeetingRoom,
+      media,
     });
   });
 

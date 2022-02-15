@@ -65,7 +65,7 @@ const MeetingRoomFooter = () => {
             microphone: !permission.microphone,
           }),
         });
-        roomSocket.emit("LOCAL_STREAM_UPDATE");
+        roomSocket.emit("LOCAL_STREAM_UPDATE", { media: permissionType });
       } catch (error) {
         setPermission({
           microphone: false,
@@ -74,7 +74,7 @@ const MeetingRoomFooter = () => {
         localStreamRef.current = emptyMediaTrack;
         localVideoRef.current.srcObject = null;
         localVideoRef.current.muted = true;
-        roomSocket.emit("LOCAL_STREAM_UPDATE");
+        roomSocket.emit("LOCAL_STREAM_UPDATE", { media: permissionType });
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
