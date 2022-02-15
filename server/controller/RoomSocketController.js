@@ -78,13 +78,6 @@ module.exports = function (socket, ionsp) {
   socket.on("LOCAL_STREAM_UPDATE", () => {
     const meeting_id = socketToRoom[socket.id];
     const meeting = participants[meeting_id];
-    const currentParticipant = meeting.find(
-      (participant) => participant.socket_id === socket.id,
-    );
-    // socket.to(meeting_id).emit("UPDATE_REMOTE_STREAM", {
-    //   participant: currentParticipant,
-    //   stream,
-    // });
     const participantInThisMeetingRoom = meeting?.filter(
       (participant) => participant.socket_id !== socket.id,
     );

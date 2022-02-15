@@ -417,27 +417,59 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           };
           const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
           const audioTrack = localStreamRef.current?.getAudioTracks?.()[0];
-          if (videoSender.current) {
+
+          if (videoSender.current && !videoTrack) {
+            console.log("removing video sender");
             pc.removeTrack(videoSender.current);
           }
-          if (audioSender.current) {
+
+          if (audioSender.current && !audioTrack) {
+            console.log("removing audio sender");
             pc.removeTrack(audioSender.current);
           }
 
           if (videoTrack) {
-            videoSender.current = pc.addTrack(
-              videoTrack,
-              localStreamRef.current,
-            );
+            console.log("adding video");
+            try {
+              videoSender.current = pc.addTrack(
+                videoTrack,
+                localStreamRef.current,
+              );
+            } catch (error) {
+              try {
+                pc.removeTrack(videoSender.current);
+                videoSender.current = pc.addTrack(
+                  videoTrack,
+                  localStreamRef.current,
+                );
+              } catch (error) {
+                console.log("adding video 2 err", error);
+              }
+              console.log("adding video err", error);
+            }
           } else {
             videoSender.current = undefined;
           }
 
           if (audioTrack) {
-            audioSender.current = pc.addTrack(
-              audioTrack,
-              localStreamRef.current,
-            );
+            console.log("adding audio");
+            try {
+              audioSender.current = pc.addTrack(
+                audioTrack,
+                localStreamRef.current,
+              );
+            } catch (error) {
+              try {
+                pc.removeTrack(audioSender.current);
+                audioSender.current = pc.addTrack(
+                  audioTrack,
+                  localStreamRef.current,
+                );
+              } catch (error) {
+                console.log("adding audio 2 err", error);
+              }
+              console.log("adding audio err", error);
+            }
           } else {
             audioSender.current = undefined;
           }
