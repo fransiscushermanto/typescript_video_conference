@@ -6,7 +6,6 @@ module.exports = {
   getRooms: async (req, res, next) => {
     const { user_id } = req.params;
     try {
-      console.log("GET ROOMS");
       const rooms = await utils.getRooms(user_id);
 
       return res.status(200).send({
