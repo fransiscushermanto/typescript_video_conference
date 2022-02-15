@@ -165,11 +165,11 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
         };
 
         pc.onconnectionstatechange = (e) => {
-          console.log("onconnectionstatechange", e);
+          console.log("onconnectionstatechange", e, pc.connectionState);
         };
 
         pc.oniceconnectionstatechange = (e) => {
-          console.log("oniceconnectionstatechange", e);
+          console.log("oniceconnectionstatechange", e, pc.iceConnectionState);
         };
 
         pc.ontrack = (e) => {
