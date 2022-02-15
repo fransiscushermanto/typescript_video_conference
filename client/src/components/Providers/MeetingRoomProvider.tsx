@@ -431,20 +431,21 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           if (videoTrack) {
             console.log("adding video");
             try {
-              videoSender.current = pc.addTrack(
-                videoTrack,
-                localStreamRef.current,
-              );
+              videoSender.current.replaceTrack(videoTrack);
+              // videoSender.current = pc.addTrack(
+              //   videoTrack,
+              //   localStreamRef.current,
+              // );
             } catch (error) {
-              try {
-                pc.removeTrack(videoSender.current);
-                videoSender.current = pc.addTrack(
-                  videoTrack,
-                  localStreamRef.current,
-                );
-              } catch (error) {
-                console.log("adding video 2 err", error);
-              }
+              // try {
+              //   pc.removeTrack(videoSender.current);
+              //   videoSender.current = pc.addTrack(
+              //     videoTrack,
+              //     localStreamRef.current,
+              //   );
+              // } catch (error) {
+              //   console.log("adding video 2 err", error);
+              // }
               console.log("adding video err", error);
             }
           } else {
@@ -454,20 +455,21 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           if (audioTrack) {
             console.log("adding audio");
             try {
-              audioSender.current = pc.addTrack(
-                audioTrack,
-                localStreamRef.current,
-              );
+              audioSender.current.replaceTrack(audioTrack);
+              // audioSender.current = pc.addTrack(
+              //   audioTrack,
+              //   localStreamRef.current,
+              // );
             } catch (error) {
-              try {
-                pc.removeTrack(audioSender.current);
-                audioSender.current = pc.addTrack(
-                  audioTrack,
-                  localStreamRef.current,
-                );
-              } catch (error) {
-                console.log("adding audio 2 err", error);
-              }
+              // try {
+              //   pc.removeTrack(audioSender.current);
+              //   audioSender.current = pc.addTrack(
+              //     audioTrack,
+              //     localStreamRef.current,
+              //   );
+              // } catch (error) {
+              //   console.log("adding audio 2 err", error);
+              // }
               console.log("adding audio err", error);
             }
           } else {
