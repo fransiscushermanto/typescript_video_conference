@@ -418,15 +418,15 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           const videoTrack = localStreamRef.current?.getVideoTracks?.()[0];
           const audioTrack = localStreamRef.current?.getAudioTracks?.()[0];
 
-          if (videoSender.current && !videoTrack) {
-            console.log("removing video sender");
-            pc.removeTrack(videoSender.current);
-          }
+          // if (videoSender.current && !videoTrack) {
+          //   console.log("removing video sender");
+          //   pc.removeTrack(videoSender.current);
+          // }
 
-          if (audioSender.current && !audioTrack) {
-            console.log("removing audio sender");
-            pc.removeTrack(audioSender.current);
-          }
+          // if (audioSender.current && !audioTrack) {
+          //   console.log("removing audio sender");
+          //   pc.removeTrack(audioSender.current);
+          // }
 
           if (videoTrack) {
             console.log("adding video");
