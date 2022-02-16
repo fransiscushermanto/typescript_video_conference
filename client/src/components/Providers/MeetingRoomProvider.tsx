@@ -425,7 +425,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           const audioTrack = localStreamRef.current?.getAudioTracks?.()[0];
 
           if (media === "cam") {
-            if (videoSender.current && !videoTrack) {
+            if ((videoSender.current && !videoTrack) || !videoTrack.enabled) {
               console.log("removing video sender", audioTrack);
               pc.removeTrack(videoSender.current);
             } else {
