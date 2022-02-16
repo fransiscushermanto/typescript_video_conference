@@ -22,8 +22,6 @@ const servers: RTCConfiguration = {
         "stun:stun.voipbuster.com",
         "stun:stun.voipstunt.com",
         "stun:stun.voxgratia.org",
-        "turn:turn01.hubl.in?transport=udp",
-        "turn:turn02.hubl.in?transport=tcp",
       ],
     },
     {
