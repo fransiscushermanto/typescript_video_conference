@@ -25,7 +25,7 @@ const servers: RTCConfiguration = {
       ],
     },
     {
-      urls: "turn:numb.viagenie.ca",
+      urls: ["turn:numb.viagenie.ca", "stun:numb.viagenie.ca"],
       credential: "123456",
       username: "fransiscus.huang47@gmail.com",
     },
