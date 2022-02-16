@@ -7,27 +7,22 @@ import { generateEmptyMediaTrack } from "../helper";
 const servers: RTCConfiguration = {
   iceServers: [
     {
-      urls: [
-        "stun:stun.l.google.com:19302",
-        "stun:stun1.l.google.com:19302",
-        "stun:stun2.l.google.com:19302",
-        "stun:stun3.l.google.com:19302",
-        "stun:stun4.l.google.com:19302",
-        "stun:stun.ekiga.net",
-        "stun:stun.ideasip.com",
-        "stun:stun.rixtelecom.se",
-        "stun:stun.schlund.de",
-        "stun:stun.stunprotocol.org:3478",
-        "stun:stun.voiparound.com",
-        "stun:stun.voipbuster.com",
-        "stun:stun.voipstunt.com",
-        "stun:stun.voxgratia.org",
-      ],
+      urls: "stun:openrelay.metered.ca:80",
     },
     {
-      urls: ["turn:numb.viagenie.ca", "stun:numb.viagenie.ca"],
-      credential: "123456",
-      username: "fransiscus.huang47@gmail.com",
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelayproject",
+      credential: "openrelayproject",
     },
   ],
   // iceCandidatePoolSize: 10,
