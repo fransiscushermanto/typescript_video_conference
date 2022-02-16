@@ -8,7 +8,22 @@ const servers = {
   iceServers: [
     {
       // urls: ["stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"],
-      urls: "stun:stun.l.google.com:19302",
+      urls: [
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302",
+        "stun:stun2.l.google.com:19302",
+        "stun:stun3.l.google.com:19302",
+        "stun:stun4.l.google.com:19302",
+        "stun:stun.ekiga.net",
+        "stun:stun.ideasip.com",
+        "stun:stun.rixtelecom.se",
+        "stun:stun.schlund.de",
+        "stun:stun.stunprotocol.org:3478",
+        "stun:stun.voiparound.com",
+        "stun:stun.voipbuster.com",
+        "stun:stun.voipstunt.com",
+        "stun:stun.voxgratia.org",
+      ],
     },
   ],
   // iceCandidatePoolSize: 10,
@@ -168,7 +183,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           switch (pc.connectionState) {
             case "failed":
             case "disconnected":
-              console.log(`${pc.connectionState} onconnectionstatechange`)
+              console.log(`${pc.connectionState} onconnectionstatechange`);
               pc.restartIce();
               break;
 
@@ -182,7 +197,9 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           switch (pc.iceConnectionState) {
             case "failed":
             case "disconnected":
-              console.log(`${pc.iceConnectionState} oniceconnectionstatechange`)
+              console.log(
+                `${pc.iceConnectionState} oniceconnectionstatechange`,
+              );
               pc.restartIce();
               break;
 
