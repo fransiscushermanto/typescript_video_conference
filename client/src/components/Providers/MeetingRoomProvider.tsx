@@ -168,6 +168,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           switch (pc.connectionState) {
             case "failed":
             case "disconnected":
+              console.log(`${pc.connectionState} onconnectionstatechange`)
               pc.restartIce();
               break;
 
@@ -181,6 +182,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           switch (pc.iceConnectionState) {
             case "failed":
             case "disconnected":
+              console.log(`${pc.iceConnectionState} oniceconnectionstatechange`)
               pc.restartIce();
               break;
 
