@@ -102,8 +102,9 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
 
   const localStreamRef = useRef<MediaStream>();
   const localVideoRef = useRef<HTMLVideoElement>();
-  const videoSender = useRef<RTCRtpSender>();
-  const audioSender = useRef<RTCRtpSender>();
+  const videoSender = useRef<{ [user_id: string]: RTCRtpSender }>({});
+  const audioSender = useRef<{ [user_id: string]: RTCRtpSender }>({});
+  const pcsRef = useRef<{ [user_id: string]: RTCPeerConnection }>({});
   const [me] = useMe();
   const [room, setRoom] = useState<RoomModel>(
     JSON.parse(sessionStorage.getItem("room")) || {
@@ -114,7 +115,6 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   const [call, setCall] = useState<CallModel>();
 
   const { meeting_id, room_id } = useParams<{ meeting_id; room_id }>();
-  const pcsRef = useRef<{ [user_id: string]: RTCPeerConnection }>({});
 
   const getLocalStream = React.useCallback(async () => {
     try {
@@ -197,14 +197,14 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           console.log("localStreamRef track", audioTrack);
 
           if (videoTrack) {
-            videoSender.current = pc.addTrack(
+            videoSender.current[participant.user_id] = pc.addTrack(
               videoTrack,
               localStreamRef.current,
             );
           }
 
           if (audioTrack) {
-            audioSender.current = pc.addTrack(
+            audioSender.current[participant.user_id] = pc.addTrack(
               audioTrack,
               localStreamRef.current,
             );
@@ -367,8 +367,12 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
       participants.forEach((participant) => {
         console.log("bye", pcsRef.current[participant.user_id]);
         if (!pcsRef.current[participant.user_id]) return;
-        pcsRef.current[participant.user_id].removeTrack(audioSender.current);
-        pcsRef.current[participant.user_id].removeTrack(videoSender.current);
+        pcsRef.current[participant.user_id].removeTrack(
+          audioSender.current[participant.user_id],
+        );
+        pcsRef.current[participant.user_id].removeTrack(
+          videoSender.current[participant.user_id],
+        );
         pcsRef.current[participant.user_id].close();
         delete pcsRef.current[participant.user_id];
       });
@@ -427,15 +431,15 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
           if (media === "cam") {
             if ((videoSender.current && !videoTrack) || !videoTrack.enabled) {
               console.log("removing video sender", audioTrack);
-              pc.removeTrack(videoSender.current);
+              pc.removeTrack(videoSender.current[participant.user_id]);
             } else {
               console.log("add video track", audioTrack);
-              videoSender.current = pc.addTrack(
+              videoSender.current[participant.user_id] = pc.addTrack(
                 videoTrack,
                 localStreamRef.current,
               );
               if (audioTrack) {
-                audioSender.current = pc.addTrack(
+                audioSender.current[participant.user_id] = pc.addTrack(
                   audioTrack,
                   localStreamRef.current,
                 );
@@ -447,15 +451,15 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
             console.log("mic", audioTrack);
             if ((audioSender.current && !audioTrack) || !audioTrack.enabled) {
               console.log("removing audio sender", videoTrack);
-              pc.removeTrack(audioSender.current);
+              pc.removeTrack(audioSender.current[participant.user_id]);
             } else {
               console.log("add audio track", videoTrack);
-              audioSender.current = pc.addTrack(
+              audioSender.current[participant.user_id] = pc.addTrack(
                 audioTrack,
                 localStreamRef.current,
               );
               if (videoTrack) {
-                videoSender.current = pc.addTrack(
+                videoSender.current[participant.user_id] = pc.addTrack(
                   videoTrack,
                   localStreamRef.current,
                 );
