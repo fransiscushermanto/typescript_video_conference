@@ -6,28 +6,23 @@ import { generateEmptyMediaTrack } from "../helper";
 
 const servers: RTCConfiguration = {
   iceServers: [
-    // {
-    //   urls: "stun:openrelay.metered.ca:80",
-    // },
-    // {
-    //   urls: "turn:openrelay.metered.ca:80",
-    //   username: "openrelayproject",
-    //   credential: "openrelayproject",
-    // },
-    // {
-    //   urls: "turn:openrelay.metered.ca:443",
-    //   username: "openrelayproject",
-    //   credential: "openrelayproject",
-    // },
-    // {
-    //   urls: "turn:openrelay.metered.ca:443?transport=tcp",
-    //   username: "openrelayproject",
-    //   credential: "openrelayproject",
-    // },
     {
-      urls: "turn:192.158.29.39:3478?transport=udp",
-      credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
-      username: "28224511:1379330808",
+      urls: "stun:openrelay.metered.ca:80",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelayproject",
+      credential: "openrelayproject",
     },
   ],
   // iceCandidatePoolSize: 10,
@@ -211,6 +206,10 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
               break;
           }
           console.log("oniceconnectionstatechange", e, pc.iceConnectionState);
+        };
+
+        pc.onnegotiationneeded = (e) => {
+          console.log("createoffer onnegotiationneeded", e);
         };
 
         pc.ontrack = (e) => {
