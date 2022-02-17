@@ -283,6 +283,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
             const localSdp = await pc.createOffer({
               offerToReceiveVideo: true,
               offerToReceiveAudio: true,
+              iceRestart: true,
             });
             console.log("create offer success", participant.user_id);
             await pc.setLocalDescription(new RTCSessionDescription(localSdp));
@@ -453,6 +454,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
               const localSdp = await pc.createOffer({
                 offerToReceiveVideo: true,
                 offerToReceiveAudio: true,
+                iceRestart: true,
               });
               await pc.setLocalDescription(new RTCSessionDescription(localSdp));
               console.log("success setLocal renegotiate");
