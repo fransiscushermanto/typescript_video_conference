@@ -4,7 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { MessageProvider } from "./components/Providers/MessageProvider";
-
+import HttpsRedirect from "react-https-redirect";
 import "../node_modules/bootstrap/dist/css/bootstrap.min.css";
 import { FirebaseProvider } from "./components/Providers/FirebaseProvider";
 import { AuthProvider } from "./components/Providers/AuthProvider";
@@ -17,19 +17,21 @@ const queryClient = new QueryClient();
 
 ReactDOM.render(
   <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <FirebaseProvider>
-        <SocketProvider>
-          <AuthProvider>
-            <MessageProvider>
-              <App />
-            </MessageProvider>
-          </AuthProvider>
-        </SocketProvider>
-      </FirebaseProvider>
-      {process.env.NODE_ENV === "development" && <ReactQueryDevtools />}
-    </QueryClientProvider>
-    <GlobalStyles />
+    <HttpsRedirect>
+      <QueryClientProvider client={queryClient}>
+        <FirebaseProvider>
+          <SocketProvider>
+            <AuthProvider>
+              <MessageProvider>
+                <App />
+              </MessageProvider>
+            </AuthProvider>
+          </SocketProvider>
+        </FirebaseProvider>
+        {process.env.NODE_ENV === "development" && <ReactQueryDevtools />}
+      </QueryClientProvider>
+      <GlobalStyles />
+    </HttpsRedirect>
   </BrowserRouter>,
   document.getElementById("root"),
 );

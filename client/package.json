@@ -20,7 +20,6 @@
     "@types/react-router-dom": "^5.3.2",
     "@types/socket.io-client": "^1.4.34",
     "@types/styled-components": "^5.1.7",
-    "typescript": "^4.5.2",
     "axios": "^0.21.1",
     "bootstrap": "^4.5.3",
     "date-fns": "^2.28.0",
@@ -35,6 +34,7 @@
     "react-avatar": "^4.0.0",
     "react-dom": "^17.0.1",
     "react-hook-form": "^6.13.1",
+    "react-https-redirect": "^1.1.0",
     "react-query": "^3.24.3",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.1",
@@ -42,6 +42,7 @@
     "simple-peer": "^9.9.3",
     "socket.io-client": "^4.4.1",
     "styled-components": "^5.2.1",
+    "typescript": "^4.5.2",
     "web-vitals": "^0.2.4",
     "yup": "^0.32.8"
   },
