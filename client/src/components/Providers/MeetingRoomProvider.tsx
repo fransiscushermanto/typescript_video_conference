@@ -15,6 +15,11 @@ const servers: RTCConfiguration = {
       credential: "openrelayproject",
     },
     {
+      urls: "turn:api.deckdeckgo.com:3478",
+      username: "user",
+      credential: "deckdeckgo",
+    },
+    {
       urls: "turn:openrelay.metered.ca:443",
       username: "openrelayproject",
       credential: "openrelayproject",
