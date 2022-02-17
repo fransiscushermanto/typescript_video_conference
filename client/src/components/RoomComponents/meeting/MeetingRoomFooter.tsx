@@ -30,11 +30,6 @@ const MeetingRoomFooter = () => {
   const setPermission = useCallback(
     (_permission: RoomPermission) => {
       setRoom((prev) => {
-        console.log(_permission, prev, {
-          ...prev,
-          room_permission: _permission,
-        });
-
         return { ...prev, room_permission: _permission };
       });
     },
@@ -67,6 +62,7 @@ const MeetingRoomFooter = () => {
         });
         roomSocket.emit("LOCAL_STREAM_UPDATE", { media: permissionType });
       } catch (error) {
+        console.log("update media", error);
         setPermission({
           microphone: false,
           camera: false,
@@ -86,22 +82,24 @@ const MeetingRoomFooter = () => {
   }, [permission]);
 
   async function onClick(target: "mic" | "cam") {
-    console.log(target);
-    const access = await navigator.permissions.query({
-      name: (target === "mic" ? "microphone" : "camera") as PermissionName,
-    });
-    const strMedia = target === "mic" ? "microphone" : "camera";
     await updateStream(target);
-
-    if (access.state === "denied") {
-      setMessages([
-        ...messages,
-        {
-          id: Date.now(),
-          message: `Please allow ${strMedia} in this page to access ${strMedia}.`,
-          severity: Severities.ERROR,
-        },
-      ]);
+    try {
+      const access = await navigator.permissions.query({
+        name: (target === "mic" ? "microphone" : "camera") as PermissionName,
+      });
+      const strMedia = target === "mic" ? "microphone" : "camera";
+      if (access.state === "denied") {
+        setMessages([
+          ...messages,
+          {
+            id: Date.now(),
+            message: `Please allow ${strMedia} in this page to access ${strMedia}.`,
+            severity: Severities.ERROR,
+          },
+        ]);
+      }
+    } catch (error) {
+      console.log("error", error);
     }
   }
 
