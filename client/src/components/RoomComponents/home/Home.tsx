@@ -1,12 +1,13 @@
 import { css, cx } from "@emotion/css";
 import { format } from "date-fns";
-import React, { useRef, useState } from "react";
-import { useMeasure } from "../../../hooks";
+import React, { useEffect, useRef, useState } from "react";
+import { useMeasure, useSocket } from "../../../hooks";
 import { useGetRoomMeetings } from "../../api-hooks";
 import { Close } from "../../Shapes";
 import { groupMeetingByDate } from "./helper";
 import MeetingCard from "./MeetingCard";
 import NewMeetingForm from "./NewMeetingForm";
+import useRoomSocket from "./../../../hooks/use-room-socket";
 
 const styled = {
   root: css`
@@ -67,9 +68,12 @@ const styled = {
 };
 
 function Home() {
+  const roomSocket = useRoomSocket();
+  const socket = useSocket();
   const rootRef = useRef<any>(null);
   const bounds = useMeasure(rootRef);
 
+  const [meetingsActiveParticipant, setMeetingActiveParticipant] = useState({});
   const [openModal, setOpenModal] = useState(false);
 
   const { roomMeetings } = useGetRoomMeetings({ enabled: true });
@@ -86,6 +90,26 @@ function Home() {
   function handleCloseModal() {
     setOpenModal(false);
   }
+
+  useEffect(() => {
+    roomSocket?.emit("GET_MEETING_ACTIVE_PARTICIPANTS");
+  }, [roomSocket]);
+
+  useEffect(() => {
+    socket.on("MEETING_ACTIVE_PARTICIPANTS", ({ participants }) => {
+      setMeetingActiveParticipant(participants);
+    });
+
+    socket.on(
+      "UPDATE_MEETING_ACTIVE_PARTICIPANTS",
+      ({ meeting_id, total_in_meeting_participants }) => {
+        setMeetingActiveParticipant({
+          ...meetingsActiveParticipant,
+          [meeting_id]: total_in_meeting_participants,
+        });
+      },
+    );
+  }, []);
 
   return (
     <div ref={rootRef} className={styled.root}>
@@ -113,7 +137,13 @@ function Home() {
                 </div>
                 <ul className="date-group-meetings">
                   {meetings.map((meeting) => (
-                    <MeetingCard key={meeting.meeting_id} {...meeting} />
+                    <MeetingCard
+                      active_participants={
+                        meetingsActiveParticipant[meeting.meeting_id]
+                      }
+                      key={meeting.meeting_id}
+                      {...meeting}
+                    />
                   ))}
                 </ul>
               </React.Fragment>

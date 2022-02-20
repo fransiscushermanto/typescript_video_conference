@@ -1,20 +1,50 @@
+import { css } from "@emotion/css";
+import React, { useMemo } from "react";
 import { useMe } from "../../../hooks";
 import { useGetRoomParticipants } from "../../api-hooks";
+import { groupParitcipantsByRole } from "./helper";
+import ParticipantCard from "./ParticipantCard";
+
+const styled = {
+  root: css`
+    color: white;
+    height: 100%;
+    overflow-y: auto;
+
+    .role-title {
+      margin-bottom: 0.625rem;
+      font-weight: bold;
+    }
+  `,
+};
 
 function Participant() {
   const [me] = useMe();
   const { participants } = useGetRoomParticipants();
 
+  const groupedParticipants = useMemo(
+    () => groupParitcipantsByRole(participants),
+    [participants],
+  );
+
   return (
-    <div style={{ color: "white" }}>
-      {participants &&
-        participants.map(({ role, user_id, user_name }) => (
-          <div key={user_id}>
-            <div>{role}</div>
-            <div>{user_id}</div>
-            <div>{me.user_id === user_id ? "You" : user_name}</div>
-          </div>
-        ))}
+    <div className={styled.root}>
+      {groupedParticipants &&
+        groupedParticipants.map(({ role, participants }) => {
+          return (
+            <React.Fragment key={role}>
+              <div className="role-title">
+                <span>
+                  {role.substring(0, 1).toUpperCase()}
+                  {role.substring(1, role.length)} ({participants.length})
+                </span>
+              </div>
+              {participants.map((participant) => (
+                <ParticipantCard key={participant.user_id} {...participant} />
+              ))}
+            </React.Fragment>
+          );
+        })}
     </div>
   );
 }

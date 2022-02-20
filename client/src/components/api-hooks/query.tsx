@@ -311,3 +311,21 @@ export function useGetRoomMeetings(
 
   return { roomMeetings, refetch, ...resProps };
 }
+
+export function useGetMeetingRoomInfo(
+  { room_id, meeting_id }: { room_id: string; meeting_id: string },
+  options: UseQueryOptions<RoomMeetingModel, any> = {},
+) {
+  return useQuery<RoomMeetingModel, any>(
+    "meeting-room-info",
+    async () => {
+      const res = await axios.get(`/meetings/${room_id}/${meeting_id}`);
+      return res.data.meeting_info;
+    },
+    {
+      ...options,
+      refetchOnWindowFocus: options.refetchOnWindowFocus || false,
+      enabled: options.enabled || false,
+    },
+  );
+}

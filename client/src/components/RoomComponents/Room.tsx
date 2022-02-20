@@ -28,7 +28,6 @@ function Room() {
 
   useGetRoomParticipants({
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
     enabled: !!(me && me.user_id),
   });
 

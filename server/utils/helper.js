@@ -13,4 +13,14 @@ const generate = (length = 8) => {
   return rtn;
 };
 
-module.exports = { generate };
+const convertArrayToObject = (array, key) => {
+  const initialValue = {};
+  return array.reduce((obj, item) => {
+    return {
+      ...obj,
+      [item[key]]: item,
+    };
+  }, initialValue);
+};
+
+module.exports = { generate, convertArrayToObject };

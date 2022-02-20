@@ -50,4 +50,19 @@ module.exports = {
       return res.status(404).send({ message: "Not Found", error });
     }
   },
+  getMeetingRoomInfo: async (req, res, next) => {
+    const { room_id, meeting_id } = req.params;
+    try {
+      const meeting_info = await utils.getRoomMeeting(room_id, meeting_id);
+
+      if (meeting_info) {
+        meeting_info.created_at = meeting_info.created_at.toDate();
+        meeting_info.created_by = await utils.getUser(meeting_info.created_by);
+      }
+
+      return res.status(200).send({ meeting_info });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
+  },
 };

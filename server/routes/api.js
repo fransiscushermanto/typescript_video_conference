@@ -32,6 +32,9 @@ router.route("/meetings/create").post(MeetingController.createMeeting);
 router.route("/meetings/:room_id").get(MeetingController.getRoomMeetings);
 router
   .route("/meetings/:room_id/:meeting_id")
+  .get(MeetingController.getMeetingRoomInfo);
+router
+  .route("/meetings/:room_id/:meeting_id")
   .delete(MeetingController.deleteMeeting);
 
 router

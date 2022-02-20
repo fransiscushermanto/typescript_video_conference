@@ -1,5 +1,10 @@
 import React, { useContext } from "react";
 import { css } from "@emotion/css";
+import { useGetMeetingRoomInfo, useGetRoomParticipants } from "../../api-hooks";
+import { ParticipantType } from "../../api-hooks/type";
+import { useParams } from "react-router-dom";
+import { useMe } from "../../../hooks";
+import { format } from "date-fns";
 
 interface Props {
   onClick: () => void;
@@ -54,24 +59,36 @@ function RoomDetailItem({ label, value }: { label: string; value: string }) {
 }
 
 function MeetingRoomInfo({ onClick }: Props) {
-  // const hostInfo = room.room_participants.hosts?.find(
-  //   (host) => host.status === "host",
-  // );
+  const [me] = useMe();
+  const { meeting_id, room_id } = useParams<{ meeting_id; room_id }>();
+  const { data } = useGetMeetingRoomInfo({ meeting_id, room_id });
+  const { participants } = useGetRoomParticipants();
+  const hostInfo = participants.find(
+    (pariticipant) => pariticipant.role === ParticipantType.HOST,
+  );
 
   return (
     <div onClick={onClick} className={styled.root}>
-      {/* <h4 className={styled.title}>{room.room_name}</h4>
+      <h4 className={styled.title}>{data?.meeting_name}</h4>
       <div className={styled.roomDetailWrapper}>
-        <RoomDetailItem label="Room ID" value={room?.room_id} />
+        <RoomDetailItem label="Meeting ID" value={meeting_id} />
         <RoomDetailItem
           label="Host"
           value={`${hostInfo?.user_name} ${
-            String(hostInfo?.user_id).includes(user.user_id) ? "(You)" : ""
+            String(hostInfo?.user_id).includes(me.user_id) ? "(You)" : ""
           }`}
         />
-        <RoomDetailItem label="Passcode" value={room?.room_password} />
-        <RoomDetailItem label="Participant ID" value={user.user_id} />
-      </div> */}
+        <RoomDetailItem
+          label="Created by"
+          value={`${data?.created_by.displayName} ${
+            String(data?.created_by.uid).includes(me.user_id) ? "(You)" : ""
+          }`}
+        />
+        <RoomDetailItem
+          label="Created at"
+          value={format(new Date(data?.created_at), "eeee, MMMM yyyy HH.mm")}
+        />
+      </div>
     </div>
   );
 }

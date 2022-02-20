@@ -305,6 +305,7 @@ class FirebaseAdmin {
       }
     } catch (error) {
       console.log(error);
+      throw error;
     }
 
     // await this.firestore

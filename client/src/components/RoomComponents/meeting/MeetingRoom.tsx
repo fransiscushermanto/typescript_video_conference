@@ -8,6 +8,7 @@ import { useMediaQuery, useRoomSocket } from "../../../hooks";
 import { useParams } from "react-router-dom";
 import { css, cx } from "@emotion/css";
 import { setMobileCSSHeightProperty } from "../../helper";
+import { useGetMeetingRoomInfo } from "../../api-hooks";
 
 interface Props {}
 
@@ -21,8 +22,10 @@ const styled = {
 const MeetingRoom: React.FC<Props> = () => {
   const [messages, setMessages] = useContext(MessageContext);
   const roomSocket = useRoomSocket();
-  const { meeting_id } = useParams<{ meeting_id }>();
+  const { meeting_id, room_id } = useParams<{ meeting_id; room_id }>();
   const isNotDesktop = useMediaQuery(`(max-width: 768px)`);
+
+  useGetMeetingRoomInfo({ meeting_id, room_id }, { enabled: true });
 
   useEffect(() => {
     if (isNotDesktop) {

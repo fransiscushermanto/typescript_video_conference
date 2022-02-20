@@ -54,7 +54,7 @@ export interface Participant {
   user_id?: string;
   user_name?: string;
   socket_id?: string;
-  status?: ParticipantType | string;
+  role?: ParticipantType | string;
 }
 
 interface RTCIncomingOffer extends Omit<Participant, "socket_id"> {

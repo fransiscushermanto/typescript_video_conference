@@ -1,6 +1,7 @@
 import { css } from "@emotion/css";
 import * as Popover from "@radix-ui/react-popover";
 import KebabMenuSVG from "../../../assets/kebab-menu.svg";
+import UsersSVG from "../../../assets/users.svg";
 import React from "react";
 import { useGetRole, useRoomSocket } from "../../../hooks";
 import { ParticipantType } from "../../api-hooks/type";
@@ -15,6 +16,7 @@ interface IProps {
   meeting_name: string;
   created_by: User;
   created_at: Date;
+  active_participants?: number;
 }
 
 const styled = {
@@ -80,8 +82,33 @@ const styled = {
         }
       }
 
-      .join-btn {
+      .right-item {
+        display: flex;
+        align-items: center;
         margin-left: auto;
+      }
+
+      .active-participants {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        margin-right: 0.625rem;
+
+        .label {
+          font-size: 0.875rem;
+        }
+
+        .icon {
+          margin-left: 0.25rem;
+
+          width: 20px;
+          height: 20px;
+          display: flex;
+          img {
+            width: 100%;
+            height: 100%;
+          }
+        }
       }
 
       .menu-trigger {
@@ -131,9 +158,9 @@ function MeetingCard({
   created_by,
   meeting_name,
   created_at,
+  active_participants,
 }: IProps) {
   const myRole = useGetRole();
-  const history = useHistory();
   const { url } = useRouteMatch();
   const { room_id } = useParams<{ room_id }>();
   const { mutate: mutateDeleteRoomMeeting } = useDeleteRoomMeeting();
@@ -148,12 +175,18 @@ function MeetingCard({
         name: "Delete",
         action: (e) => {
           e.stopPropagation();
-          mutateDeleteRoomMeeting({ room_id, meeting_id });
+          if (active_participants && active_participants > 0) {
+            alert(
+              "Sorry, unable to delete meeting participants still in room.",
+            );
+          } else {
+            mutateDeleteRoomMeeting({ room_id, meeting_id });
+          }
         },
         role: [ParticipantType.HOST],
       },
     ],
-    [],
+    [active_participants],
   );
 
   function onJoin() {
@@ -182,30 +215,38 @@ function MeetingCard({
             <span>{meeting_name}</span>
           </div>
         </div>
-        <div className="join-btn btn btn-success" onClick={onJoin}>
-          Join
+        <div className="right-item">
+          <div className="active-participants">
+            <span className="label">{active_participants || 0}</span>
+            <span className="icon">
+              <img src={UsersSVG} alt="user" />
+            </span>
+          </div>
+          <div className="join-btn btn btn-success" onClick={onJoin}>
+            Join
+          </div>
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <button
+                className="menu-trigger"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img src={KebabMenuSVG} className="icon" alt="icon" />
+              </button>
+            </Popover.Trigger>
+            <Popover.Content align="start" sideOffset={10}>
+              <ul className={styled.menuDropdown}>
+                {menus
+                  .filter(({ role }) => role && role.includes(myRole))
+                  .map(({ name, action }, i) => (
+                    <li key={i} className="menu" onClick={action}>
+                      {name}
+                    </li>
+                  ))}
+              </ul>
+            </Popover.Content>
+          </Popover.Root>
         </div>
-        <Popover.Root>
-          <Popover.Trigger asChild>
-            <button
-              className="menu-trigger"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img src={KebabMenuSVG} className="icon" alt="icon" />
-            </button>
-          </Popover.Trigger>
-          <Popover.Content align="start" sideOffset={10}>
-            <ul className={styled.menuDropdown}>
-              {menus
-                .filter(({ role }) => role && role.includes(myRole))
-                .map(({ name, action }, i) => (
-                  <li key={i} className="menu" onClick={action}>
-                    {name}
-                  </li>
-                ))}
-            </ul>
-          </Popover.Content>
-        </Popover.Root>
       </div>
     </div>
   );

@@ -101,6 +101,10 @@ export default css`
           flex-direction: row;
           align-items: center;
           .btn-leave-wrapper {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin-left: auto;
             padding: 0px 10px;
             .btn-leave {

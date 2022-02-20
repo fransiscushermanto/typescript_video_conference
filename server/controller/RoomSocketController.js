@@ -1,8 +1,30 @@
+const { convertArrayToObject } = require("../utils/helper");
+
 require("fs");
+
+const io = require("../../index").io;
 const participants = {};
 const socketToRoom = {};
 
 module.exports = function (socket, ionsp) {
+  const room_id = socket.nsp.name.split("/")[1];
+
+  socket.on("GET_MEETING_ACTIVE_PARTICIPANTS", () => {
+    const temp = Object.entries(participants).map(([meeting_id, values]) => ({
+      meeting_id,
+      total_active_participant: values.length,
+    }));
+
+    io.to(room_id).emit("MEETING_ACTIVE_PARTICIPANTS", {
+      participants: temp.reduce((obj, item) => {
+        return {
+          ...obj,
+          [item["meeting_id"]]: item["total_active_participant"],
+        };
+      }, {}),
+    });
+  });
+
   socket.on("JOIN_MEETING_ROOM", ({ meeting_id, me }) => {
     const meetingParticipants = participants[meeting_id];
 
@@ -33,6 +55,11 @@ module.exports = function (socket, ionsp) {
     socket
       .to(meeting_id)
       .emit("NEW_PARTICIPANT", { message: `${me.user_name} is joining` });
+
+    io.to(room_id).emit("UPDATE_MEETING_ACTIVE_PARTICIPANTS", {
+      meeting_id,
+      total_in_meeting_participants: participants[meeting_id].length,
+    });
 
     ionsp
       .to(socket.id)

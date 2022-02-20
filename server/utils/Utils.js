@@ -145,6 +145,10 @@ async function deleteMeeting(room_id, meeting_id) {
   return await admin.deleteMeeting(room_id, meeting_id);
 }
 
+async function getRoomMeeting(room_id, meeting_id) {
+  return await admin.getRoomMeeting(room_id, meeting_id);
+}
+
 async function getRoomMeetings(room_id) {
   return await admin.getRoomMeetings(room_id);
 }
@@ -166,6 +170,7 @@ module.exports = {
   deleteRoom,
   createMeeting,
   deleteMeeting,
+  getRoomMeeting,
   getRoomMeetings,
   getRoomNotifications,
   user_sockets,
