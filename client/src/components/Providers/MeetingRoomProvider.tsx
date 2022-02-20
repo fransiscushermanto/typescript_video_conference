@@ -1,33 +1,49 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMe, useRoomSocket } from "../../hooks";
-import useCallbackRef from "../../hooks/use-callback-ref";
 import { generateEmptyMediaTrack } from "../helper";
 
 const servers: RTCConfiguration = {
+  // iceServers: [
+  //   {
+  //     urls: "stun:openrelay.metered.ca:80",
+  //   },
+  //   {
+  //     urls: "turn:openrelay.metered.ca:80",
+  //     username: "openrelayproject",
+  //     credential: "openrelayproject",
+  //   },
+  //   {
+  //     urls: "turn:api.deckdeckgo.com:3478",
+  //     username: "user",
+  //     credential: "deckdeckgo",
+  //   },
+  //   {
+  //     urls: "turn:openrelay.metered.ca:443",
+  //     username: "openrelayproject",
+  //     credential: "openrelayproject",
+  //   },
+  //   {
+  //     urls: "turn:openrelay.metered.ca:443?transport=tcp",
+  //     username: "openrelayproject",
+  //     credential: "openrelayproject",
+  //   },
+  // ],
   iceServers: [
     {
-      urls: "stun:openrelay.metered.ca:80",
+      urls: ["stun:ss-turn2.xirsys.com"],
     },
     {
-      urls: "turn:openrelay.metered.ca:80",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
-    {
-      urls: "turn:api.deckdeckgo.com:3478",
-      username: "user",
-      credential: "deckdeckgo",
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443",
-      username: "openrelayproject",
-      credential: "openrelayproject",
-    },
-    {
-      urls: "turn:openrelay.metered.ca:443?transport=tcp",
-      username: "openrelayproject",
-      credential: "openrelayproject",
+      username: process.env.REACT_APP_XIRSYS_TURN_USERNAME,
+      credential: process.env.REACT_APP_XIRSYS_TURN_CREDENTIAL,
+      urls: [
+        "turn:ss-turn2.xirsys.com:80?transport=udp",
+        "turn:ss-turn2.xirsys.com:3478?transport=udp",
+        "turn:ss-turn2.xirsys.com:80?transport=tcp",
+        "turn:ss-turn2.xirsys.com:3478?transport=tcp",
+        "turns:ss-turn2.xirsys.com:443?transport=tcp",
+        "turns:ss-turn2.xirsys.com:5349?transport=tcp",
+      ],
     },
   ],
   // iceCandidatePoolSize: 10,
