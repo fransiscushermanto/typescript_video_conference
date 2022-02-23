@@ -8,6 +8,7 @@ import { groupMeetingByDate } from "./helper";
 import MeetingCard from "./MeetingCard";
 import NewMeetingForm from "./NewMeetingForm";
 import useRoomSocket from "./../../../hooks/use-room-socket";
+import RegisterFaceModal from "./RegisterFaceModal";
 
 const styled = {
   root: css`
@@ -151,8 +152,10 @@ function Home() {
           })}
       </div>
 
+      <RegisterFaceModal />
+
       {openModal && (
-        <div className="create-meeting-modal modal-backdrop">
+        <div className="create-meeting-modal modal backdrop">
           <div className="modal-content">
             <div className="modal-header">
               <div className="title">New Meeting</div>

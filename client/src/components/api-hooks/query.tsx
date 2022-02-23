@@ -1,8 +1,4 @@
-import {
-  DocumentData,
-  DocumentSnapshot,
-  QuerySnapshot,
-} from "firebase/firestore";
+import { DocumentData, QuerySnapshot } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import { useQuery, UseQueryOptions } from "react-query";
 import { useParams } from "react-router-dom";

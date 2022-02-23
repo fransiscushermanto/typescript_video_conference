@@ -162,15 +162,22 @@ export default css`
     }
   }
 
-  .modal-backdrop {
+  .modal {
+    position: fixed;
     color: black;
-    position: absolute;
     top: 0%;
     left: 0%;
     height: 100%;
     width: 100%;
+    display: block;
 
     background-color: rgba(0, 0, 0, 0.5);
+
+    &.backdrop {
+      position: absolute;
+      top: 0%;
+      left: 0%;
+    }
 
     .modal-content {
       background-color: rgb(255, 255, 255);
