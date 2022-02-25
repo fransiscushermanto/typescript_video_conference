@@ -29,7 +29,11 @@ const styled = {
 function MeetingVideo({ children }, ref) {
   return (
     <div className={styled.root}>
-      <video className="video" ref={ref} />
+      <video
+        onContextMenu={(e) => e.preventDefault()}
+        className="video"
+        ref={ref}
+      />
       {children}
     </div>
   );

@@ -520,68 +520,6 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
               }
             }
           }
-
-          console.log("senders", pc.getSenders());
-          console.log("receivers", pc.getReceivers());
-
-          // if (videoTrack) {
-          //   console.log("adding video");
-          //   try {
-          //     const targetSender = pc
-          //       .getSenders()
-          //       .find((sender) => sender.track.kind === videoTrack.kind);
-
-          //     console.log("video targetSender", targetSender, videoTrack);
-          //     // targetSender.replaceTrack(videoTrack);
-
-          //     // videoSender.current = pc.addTrack(
-          //     //   videoTrack,
-          //     //   localStreamRef.current,
-          //     // );
-          //   } catch (error) {
-          //     try {
-          //       pc.removeTrack(videoSender.current);
-          //       videoSender.current = pc.addTrack(
-          //         videoTrack,
-          //         localStreamRef.current,
-          //       );
-          //     } catch (error) {
-          //       console.log("adding video 2 err", error);
-          //     }
-          //     console.log("adding video err", error);
-          //   }
-          // } else {
-          //   videoSender.current = undefined;
-          // }
-
-          // if (audioTrack) {
-          //   console.log("adding audio");
-          //   try {
-          //     const targetSender = pc
-          //       .getSenders()
-          //       .find((sender) => sender.track.kind === audioTrack.kind);
-
-          //     console.log("audio targetSender", targetSender, audioTrack);
-          //     targetSender.replaceTrack(audioTrack);
-          //     // audioSender.current = pc.addTrack(
-          //     //   audioTrack,
-          //     //   localStreamRef.current,
-          //     // );
-          //   } catch (error) {
-          //     try {
-          //       pc.removeTrack(audioSender.current);
-          //       audioSender.current = pc.addTrack(
-          //         audioTrack,
-          //         localStreamRef.current,
-          //       );
-          //     } catch (error) {
-          //       console.log("adding audio 2 err", error);
-          //     }
-          //     console.log("adding audio err", error);
-          //   }
-          // } else {
-          //   audioSender.current = undefined;
-          // }
         });
       },
     );

@@ -29,6 +29,12 @@ if (process.env.NODE_ENV !== "test") {
     const index = path.join(__dirname, "client", "build", "index.html");
     res.sendFile(index);
   });
+} else {
+  app.use(express.static(path.join(__dirname, "client", "public")));
+  app.get("*", function (req, res) {
+    const index = path.join(__dirname, "client", "public", "index.html");
+    res.sendFile(index);
+  });
 }
 
 http.listen(port, () => {
