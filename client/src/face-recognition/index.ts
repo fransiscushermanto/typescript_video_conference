@@ -23,10 +23,10 @@ export async function loadModels() {
   }
 }
 
-export async function getFullFaceDescription(blob, maxResults = 512) {
+export async function getFullFaceDescription(blob, maxResults = 600) {
   try {
     // tiny_face_detector options
-    let minConfidence = 0.8;
+    let minConfidence = 0.3;
     const OPTION = new faceapi.SsdMobilenetv1Options({
       minConfidence,
       maxResults,
@@ -58,15 +58,14 @@ export const drawFaceRect = (descriptions, ctx) => {
         const { x, y, width, height } = desc.detection.box;
         const landmarksPoint = desc.landmarks._positions;
 
-        ctx.background = "red";
         ctx.font = "normal 18px Gotham, Helvetica Neue, sans-serif";
         ctx.lineWidth = 2;
-        ctx.strokeStyle = "#08E";
+        ctx.strokeStyle = "aqua";
 
         //draw 68 points
         landmarksPoint.map((point) => {
           ctx.beginPath();
-          ctx.fillStyle = "#08E";
+          ctx.fillStyle = "aqua";
           ctx.arc(point._x, point._y, 3, 0, 2 * Math.PI);
           ctx.closePath();
 

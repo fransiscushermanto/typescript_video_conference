@@ -113,11 +113,16 @@ function RegisterFaceModal({}: Props) {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    canvas
+    const canvasCaptureImage = Object.assign(document.createElement("canvas"), {
+      width: video.videoWidth,
+      height: video.videoHeight,
+    }) as HTMLCanvasElement;
+
+    canvasCaptureImage
       .getContext("2d", { alpha: false })
       .drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
-    canvas.toBlob(async (blob) => {
+    canvasCaptureImage.toBlob(async (blob) => {
       const url = window.URL.createObjectURL(blob);
       getFullFaceDescription(url).then((data) => setImgFullDesc(data));
       // const ctx = canvas.getContext("2d");
@@ -132,13 +137,27 @@ function RegisterFaceModal({}: Props) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      canvas
+      const canvasCaptureImage = Object.assign(
+        document.createElement("canvas"),
+        {
+          width: video.videoWidth,
+          height: video.videoHeight,
+        },
+      ) as HTMLCanvasElement;
+
+      canvasCaptureImage
+        .getContext("2d")
+        .clearRect(0, 0, canvasCaptureImage.width, canvasCaptureImage.height);
+
+      canvasCaptureImage
         .getContext("2d", { alpha: false })
         .drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-      canvas.toBlob(async (blob) => {
+
+      canvasCaptureImage.toBlob(async (blob) => {
         if (blob) {
           const url = window.URL.createObjectURL(blob);
           getFullFaceDescription(url).then((data) => setImgFullDesc(data));
+          canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
           const ctx = canvas.getContext("2d");
           drawFaceRect(imgFullDesc, ctx);
         }
@@ -147,7 +166,7 @@ function RegisterFaceModal({}: Props) {
   }, [modelLoaded, imgFullDesc]);
 
   useEffect(() => {
-    const interval = setInterval(capture, 700);
+    const interval = setInterval(capture, 100);
     return () => clearInterval(interval);
   }, [capture]);
 
@@ -172,6 +191,7 @@ function RegisterFaceModal({}: Props) {
               <canvas ref={canvasRef} id="video-canvas" />
               {!allowedCamera && (
                 <button
+                  disabled={!modelLoaded}
                   onClick={startCamera}
                   className="btn btn-outline-primary btn-start-video"
                 >
