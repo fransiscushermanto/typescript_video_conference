@@ -12,6 +12,8 @@ export default function useFaceRecognition() {
   async function initModels() {
     const MODEL_URL = window.location.origin + "/models";
     try {
+      console.log("initializing models");
+
       await faceapi.loadSsdMobilenetv1Model(MODEL_URL);
       setIsLoadingFaceDetector(false);
 
@@ -20,6 +22,8 @@ export default function useFaceRecognition() {
 
       await faceapi.loadFaceRecognitionModel(MODEL_URL);
       setIsFeatureExtractorLoading(false);
+
+      console.log("done initializing models");
     } catch (error) {
       console.log("initModels", error);
       throw error;

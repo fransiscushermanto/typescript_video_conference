@@ -202,8 +202,7 @@ function RegisterFaceModal({ onClose }: Props) {
     isFetching: isGetParticipantFaceLoading,
   } = useGetRoomParticipantFaces({ enabled: true });
   const { videoDevices, refetchUserMedia } = useMediaDevices();
-  const [selectedVideoDevices, setSelectedVideoDevices] =
-    useState<MediaDeviceInfo>();
+  const [selectedVideoDevices, setSelectedVideoDevices] = useState<string>();
   const [localSavedImage, setLocalSavedImage] = useState(savedImage);
   const [imgPreview, setImagePreview] = useState<string>();
   const [imgFaceDescriptor, setImgFaceDesctiptor] = useState<Float32Array>();
@@ -220,8 +219,9 @@ function RegisterFaceModal({ onClose }: Props) {
         video: {
           width: 960,
           height: 720,
+          facingMode: "user",
           ...(selectedVideoDevices && {
-            deviceId: selectedVideoDevices?.deviceId,
+            deviceId: selectedVideoDevices,
           }),
         },
       });
@@ -229,8 +229,10 @@ function RegisterFaceModal({ onClose }: Props) {
       const selectedVideoDevice = localStream
         .getTracks()
         .find((track) => track.kind === "video")
-        .getSettings();
-      console.log("selectedVideoDevice", selectedVideoDevice);
+        .getSettings().deviceId;
+
+      if (selectedVideoDevice) setSelectedVideoDevices(selectedVideoDevice);
+
       if (!videoDevices) refetchUserMedia();
       localStreamRef.current = localStream;
       videoRef.current.srcObject = localStream;
@@ -310,12 +312,6 @@ function RegisterFaceModal({ onClose }: Props) {
   }, [capture, localSavedImage]);
 
   useEffect(() => {
-    if (videoDevices) {
-      setSelectedVideoDevices(videoDevices[0]);
-    }
-  }, [videoDevices]);
-
-  useEffect(() => {
     startCamera();
   }, [startCamera]);
 
@@ -374,13 +370,8 @@ function RegisterFaceModal({ onClose }: Props) {
 
             <select
               className="select-video mt-1"
-              onChange={(e) =>
-                setSelectedVideoDevices(
-                  videoDevices.find(
-                    (device) => device.deviceId === e.target.value,
-                  ),
-                )
-              }
+              value={selectedVideoDevices}
+              onChange={(e) => setSelectedVideoDevices(e.target.value)}
             >
               {videoDevices?.map((device) => (
                 <option value={device.deviceId}>{device.label}</option>
