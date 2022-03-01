@@ -149,7 +149,7 @@ function MeetingSetup({ onJoin }: Props) {
             ? videoConstraint
             : device === "video"
             ? !meetingRoomPermissions.camera && videoConstraint
-            : meetingRoomPermissions.camera;
+            : meetingRoomPermissions.camera && videoConstraint;
 
         const audio =
           device === "both"
@@ -186,14 +186,20 @@ function MeetingSetup({ onJoin }: Props) {
         videoRef.current.autoplay = true;
         videoRef.current.muted = true;
 
-        setMeetingRoomPermissions((prev) => ({
-          ...prev,
-          ...(device === "both" && { camera: true, microphone: true }),
-          ...(device === "video" && { camera: !meetingRoomPermissions.camera }),
-          ...(device === "audio" && {
-            microphone: !meetingRoomPermissions.microphone,
-          }),
-        }));
+        setMeetingRoomPermissions((prev) => {
+          const data = {
+            ...prev,
+            ...(device === "both" && { camera: true, microphone: true }),
+            ...(device === "video" && {
+              camera: !meetingRoomPermissions.camera,
+            }),
+            ...(device === "audio" && {
+              microphone: !meetingRoomPermissions.microphone,
+            }),
+          };
+          console.log(data);
+          return data;
+        });
       } catch (error) {
         console.log("startDevice", error);
         localStreamRef.current = emptyMediaTrack;

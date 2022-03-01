@@ -148,7 +148,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
 
   const { meeting_id, room_id } = useParams<{ meeting_id; room_id }>();
 
-  const startCamera = React.useCallback(async () => {
+  const startDevice = React.useCallback(async () => {
     try {
       const video = meetingRoomPermission.camera && {
         ...videoConstraints,
@@ -156,6 +156,12 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
           deviceId: selectedMediaDevices.video,
         }),
       };
+
+      console.log(
+        video,
+        meetingRoomPermission.camera,
+        meetingRoomPermission.microphone,
+      );
       const localStream = await navigator.mediaDevices.getUserMedia({
         audio: meetingRoomPermission.microphone,
         video,
@@ -183,13 +189,20 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
 
   const getLocalStream = React.useCallback(async () => {
     console.log("getLocalStream");
-    await startCamera();
+    await startDevice();
     roomSocket?.emit("JOIN_MEETING_ROOM", {
       room_id,
       meeting_id,
       me,
     });
-  }, [me, meeting_id, roomSocket, room_id]);
+  }, [
+    me,
+    meeting_id,
+    roomSocket,
+    room_id,
+    meetingRoomPermission.camera,
+    meetingRoomPermission.microphone,
+  ]);
 
   const createPeerConnection = React.useCallback(
     (participant: Participant) => {
