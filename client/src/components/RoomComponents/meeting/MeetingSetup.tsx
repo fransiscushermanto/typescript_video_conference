@@ -19,6 +19,10 @@ const styled = {
     flex-direction: row;
     height: 100%;
 
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+
     .col {
       display: flex;
       flex-direction: column;
@@ -31,7 +35,7 @@ const styled = {
         height: 100%;
         .video-wrapper {
           position: relative;
-          width: 740px;
+          width: 100%;
           height: 416px;
           display: flex;
           margin-bottom: 0.5rem;

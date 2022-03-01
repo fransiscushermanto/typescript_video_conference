@@ -106,6 +106,7 @@ interface ContextType {
 export const videoConstraints = {
   width: { min: 640, ideal: 960, max: 1920 },
   height: { min: 576, ideal: 720, max: 1080 },
+  facingMode: "user",
 };
 
 const MeetingRoomContext = React.createContext<ContextType>({
@@ -188,7 +189,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
       meeting_id,
       me,
     });
-  }, [me, meeting_id, roomSocket, room_id, startCamera]);
+  }, [me, meeting_id, roomSocket, room_id]);
 
   const createPeerConnection = React.useCallback(
     (participant: Participant) => {
@@ -292,9 +293,10 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
 
   useEffect(() => {
     if (roomSocket && isReadyToJoin) {
+      console.log("initial");
       getLocalStream();
     }
-  }, [roomSocket, isReadyToJoin, getLocalStream]);
+  }, [roomSocket, isReadyToJoin]);
 
   useEffect(() => {
     roomSocket?.on(
