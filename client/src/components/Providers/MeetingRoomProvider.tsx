@@ -97,7 +97,7 @@ interface ContextType {
   localVideoRef: React.MutableRefObject<HTMLVideoElement>;
   localStreamRef: React.MutableRefObject<MediaStream>;
   callState: [CallModel, React.Dispatch<React.SetStateAction<CallModel>>];
-  selectedMediaDevices: [
+  selectedMediaDevicesState: [
     MediaDevices,
     React.Dispatch<React.SetStateAction<MediaDevices>>,
   ];
@@ -106,7 +106,6 @@ interface ContextType {
 export const videoConstraints = {
   width: { min: 640, ideal: 960, max: 1920 },
   height: { min: 576, ideal: 720, max: 1080 },
-  facingMode: "user",
 };
 
 const MeetingRoomContext = React.createContext<ContextType>({
@@ -121,7 +120,7 @@ const MeetingRoomContext = React.createContext<ContextType>({
   localStreamRef: { current: undefined },
   localVideoRef: { current: undefined },
   callState: [{}, () => {}],
-  selectedMediaDevices: [{}, () => {}],
+  selectedMediaDevicesState: [{}, () => {}],
 });
 
 const emptyMediaStream = generateEmptyMediaTrack();
@@ -202,6 +201,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
     room_id,
     meetingRoomPermission.camera,
     meetingRoomPermission.microphone,
+    selectedMediaDevices.video,
   ]);
 
   const createPeerConnection = React.useCallback(
@@ -565,7 +565,10 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
           meetingRoomPermission,
           setMeetingRoomPermission,
         ],
-        selectedMediaDevices: [selectedMediaDevices, setSelectedMediaDevices],
+        selectedMediaDevicesState: [
+          selectedMediaDevices,
+          setSelectedMediaDevices,
+        ],
         participantsState: [participants, setParticipants],
         callState: [call, setCall],
       }}

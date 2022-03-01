@@ -1,5 +1,6 @@
 import * as faceapi from "face-api.js";
 import { useState } from "react";
+import { RoomFacesModel } from "../components/api-hooks/type";
 
 export default function useFaceRecognition() {
   const [isLoadingFaceDetector, setIsLoadingFaceDetector] =
@@ -103,6 +104,37 @@ export default function useFaceRecognition() {
     }
   }
 
+  async function createMatcher(
+    roomFaces: RoomFacesModel[],
+    maxDescriptorDistance,
+  ) {
+    // Create labeled descriptors of member from profile
+    let labeledDescriptors = roomFaces.map(
+      (roomFace) =>
+        new faceapi.LabeledFaceDescriptors(
+          roomFace.user_id,
+          roomFace.faces.map(
+            (face) =>
+              new Float32Array(
+                face.face_description.match(/-?\d+(?:\.\d+)?/g).map(Number),
+              ),
+          ),
+        ),
+    );
+
+    /**
+     * > 0.6 -> false positive case for unknown dataset
+     * < 0.3 -> false negative case for known dataset
+     * Create face matcher (maximum descriptor distance is 0.5)
+     */
+    let faceMatcher = new faceapi.FaceMatcher(
+      labeledDescriptors,
+      maxDescriptorDistance,
+    );
+
+    return faceMatcher;
+  }
+
   return {
     initModels,
     isLoadingFaceDetector,
@@ -110,5 +142,6 @@ export default function useFaceRecognition() {
     isFeatureExtractorLoading,
     getFullFaceDescription,
     drawFaceRect,
+    createMatcher,
   };
 }

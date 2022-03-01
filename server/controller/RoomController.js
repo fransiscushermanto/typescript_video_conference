@@ -156,12 +156,22 @@ module.exports = {
       return res.status(500).send({ message: "Internal Server Error", error });
     }
   },
-  getUserFaces: async (req, res, next) => {
+  getRoomUserFaces: async (req, res, next) => {
     const { room_id, user_id } = req.params;
 
     try {
       const user_faces = await utils.getRoomUserFaces(room_id, user_id);
       return res.status(200).send({ user_faces });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
+  },
+  getRoomFaces: async (req, res, next) => {
+    const { room_id } = req.params;
+
+    try {
+      const room_faces = await utils.getRoomFaces(room_id);
+      return res.status(200).send({ room_faces });
     } catch (error) {
       return res.status(500).send({ message: "Internal Server Error", error });
     }

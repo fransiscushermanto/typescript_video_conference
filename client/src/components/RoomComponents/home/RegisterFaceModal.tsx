@@ -373,7 +373,6 @@ function RegisterFaceModal({ onClose }: Props) {
                   webcamRef.current = e;
                 }}
               />
-              {/* <video ref={videoRef} /> */}
               {localSavedImage?.length !== MAX_FACES && (
                 <canvas ref={canvasRef} id="video-canvas" />
               )}
@@ -386,7 +385,7 @@ function RegisterFaceModal({ onClose }: Props) {
                   Start Video
                 </button>
               )}
-              {(!modelLoaded || !imgFaceDescriptor) && (
+              {(!modelLoaded || imgFullDesc.length < 1) && (
                 <div className="loading-wrapper">
                   <CircularProgress />
                 </div>
@@ -413,7 +412,7 @@ function RegisterFaceModal({ onClose }: Props) {
               onClick={onSave}
               disabled={
                 !allowedCamera ||
-                imgFullDesc?.length >= 2 ||
+                imgFullDesc.length < 1 ||
                 !imgFaceDescriptor ||
                 (imgFaceDescriptor && imgFaceDescriptor.length !== 128) ||
                 isLoadingStoreFace ||

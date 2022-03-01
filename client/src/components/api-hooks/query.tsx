@@ -14,6 +14,7 @@ import {
   RoomNotificationModel,
   UserInWaitingRoomModel,
   RoomParticipantFaceModel,
+  RoomFacesModel,
 } from "./type";
 
 interface Participant {
@@ -336,8 +337,27 @@ export function useGetRoomParticipantFaces(
   return useQuery<RoomParticipantFaceModel[], any>(
     "room-participant-face",
     async () => {
-      const res = await axios.get(`/rooms/${room_id}/face/${me.user_id}`);
+      const res = await axios.get(`/rooms/${room_id}/faces/${me.user_id}`);
       return res.data.user_faces;
+    },
+    {
+      ...options,
+      enabled: options.enabled || false,
+      refetchOnWindowFocus: options.refetchOnWindowFocus || false,
+    },
+  );
+}
+
+export function useGetRoomFaces(
+  options: UseQueryOptions<RoomFacesModel[], any> = {},
+) {
+  const { room_id } = useParams<{ room_id }>();
+
+  return useQuery<RoomFacesModel[], any>(
+    "room-faces",
+    async () => {
+      const res = await axios.get(`/rooms/${room_id}/faces`);
+      return res.data.room_faces;
     },
     {
       ...options,

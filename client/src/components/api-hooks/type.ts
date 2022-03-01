@@ -55,8 +55,15 @@ export interface RoomMeetingModel {
 }
 
 export interface RoomParticipantFaceModel {
+  face_id: string;
   preview_image: string;
   face_description: string;
+  created_at: Date;
+}
+
+export interface RoomFacesModel {
+  faces: RoomParticipantFaceModel[];
+  user_id: string;
 }
 
 export interface RoomNotificationModel {

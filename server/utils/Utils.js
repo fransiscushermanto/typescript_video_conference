@@ -188,6 +188,16 @@ async function getRoomUserFaces(room_id, user_id) {
   }
 }
 
+async function getRoomFaces(room_id) {
+  try {
+    const room_faces = await admin.getRoomFaces(room_id);
+
+    return room_faces;
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   getUser,
   createRoom,
@@ -208,4 +218,5 @@ module.exports = {
   checkMeeting,
   storeRoomUserFace,
   getRoomUserFaces,
+  getRoomFaces,
 };

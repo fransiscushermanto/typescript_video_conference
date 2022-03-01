@@ -26,6 +26,7 @@ const MeetingRoomFooter = () => {
       meetingRoomPermission,
       setMeetingRoomPermission,
     ],
+    selectedMediaDevicesState: [selectedMediaDevices],
   } = useMeetingRoom();
   const permission = React.useMemo(
     () => ({ ...meetingRoomPermission }),
@@ -42,12 +43,24 @@ const MeetingRoomFooter = () => {
   const updateStream = useCallback(
     async (permissionType?: "mic" | "cam"): Promise<void> => {
       try {
+        const video =
+          permissionType === "cam"
+            ? !permission.camera && {
+                ...videoConstraints,
+                ...(selectedMediaDevices.video && {
+                  deviceId: selectedMediaDevices.video,
+                }),
+              }
+            : permission.camera && {
+                ...videoConstraints,
+                ...(selectedMediaDevices.video && {
+                  deviceId: selectedMediaDevices.video,
+                }),
+              };
+
         const video_stream: MediaStream =
           await navigator.mediaDevices.getUserMedia({
-            video:
-              permissionType === "cam"
-                ? !permission.camera && videoConstraints
-                : permission.camera && videoConstraints,
+            video,
             audio:
               permissionType === "mic"
                 ? !permission.microphone && true

@@ -544,6 +544,40 @@ class FirebaseAdmin {
     }
   }
 
+  async getRoomFaces(room_id) {
+    try {
+      const room_faces = await this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .collection(collections.room_participants_faces)
+        .get();
+
+      return room_faces.docs
+        .map((doc) => {
+          const faces = doc.data()?.faces;
+
+          if (!faces) return undefined;
+
+          const formatedPayload = Object.entries(faces).map(
+            ([face_id, payload]) => ({
+              face_id,
+              ...payload,
+              created_at: payload.created_at?.toDate?.(),
+            }),
+          );
+
+          return {
+            faces: formatedPayload,
+            user_id: doc.id,
+          };
+        })
+        .filter((e) => e);
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async storeRoomUserFace(room_id, user_id, face_description, preview_image) {
     try {
       const prevUserFaces = await this.getRoomUserFaces(room_id, user_id);

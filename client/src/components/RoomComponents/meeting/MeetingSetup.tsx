@@ -1,6 +1,10 @@
 import { css, cx } from "@emotion/css";
-import React, { useCallback, useEffect, useRef } from "react";
-import { useMediaDevices, useMeetingRoom } from "../../../hooks";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useFaceRecognition,
+  useMediaDevices,
+  useMeetingRoom,
+} from "../../../hooks";
 import VideoSVG from "../../../assets/video-call.svg";
 import NoVideoSVG from "../../../assets/no-video-call-white.svg";
 import MicrophoneSVG from "../../../assets/microphone.svg";
@@ -8,6 +12,21 @@ import NoMicrophoneSVG from "../../../assets/no-microphone-white.svg";
 import { MessageContext } from "../../Providers/MessageProvider";
 import { Severities } from "../../CustomSnackbar";
 import { generateEmptyMediaTrack } from "../../helper";
+import Webcam from "react-webcam";
+import {
+  DRAW_TIME_INTERVAL,
+  FACE_DESCRIPTION_MAX_RESULTS,
+  MATCHING_THRESHOLD,
+} from "../constants";
+import { CircularProgress } from "@material-ui/core";
+import {
+  FaceDetection,
+  FaceLandmarks68,
+  FaceMatcher,
+  WithFaceDescriptor,
+  WithFaceLandmarks,
+} from "face-api.js";
+import { useGetRoomFaces } from "../../api-hooks";
 
 interface Props {
   onJoin: () => void;
@@ -39,6 +58,14 @@ const styled = {
           height: 416px;
           display: flex;
           margin-bottom: 0.5rem;
+
+          #video-canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+          }
 
           .video-action-wrapper {
             position: absolute;
@@ -90,6 +117,17 @@ const styled = {
             }
           }
 
+          .loading-wrapper {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
           video {
             width: 100%;
             height: 100%;
@@ -119,18 +157,49 @@ const emptyMediaTrack = generateEmptyMediaTrack();
 function MeetingSetup({ onJoin }: Props) {
   const [messages, setMessages] = React.useContext(MessageContext);
   const {
-    selectedMediaDevices: [selectedMediaDevices, setSelectedMediaDevices],
+    selectedMediaDevicesState: [selectedMediaDevices, setSelectedMediaDevices],
     meetingRoomPermissionState: [
       meetingRoomPermissions,
       setMeetingRoomPermissions,
     ],
   } = useMeetingRoom();
 
+  const [faceMatcher, setFaceMatcher] = useState<FaceMatcher>();
+  const [imgFullDesc, setImgFullDesc] = useState<
+    WithFaceDescriptor<
+      WithFaceLandmarks<
+        {
+          detection: FaceDetection;
+        },
+        FaceLandmarks68
+      >
+    >[]
+  >([]);
+
+  const { data: roomFaces } = useGetRoomFaces({ enabled: true });
+
+  const {
+    getFullFaceDescription,
+    initModels,
+    drawFaceRect,
+    is68FacialLandmarkLoading,
+    isFeatureExtractorLoading,
+    isLoadingFaceDetector,
+    createMatcher,
+  } = useFaceRecognition();
+
   const { audioInputDevices, videoDevices, refetchUserMedia } =
     useMediaDevices();
 
   const localStreamRef = useRef<MediaStream>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const webcamRef = useRef<Webcam>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const modelLoaded =
+    !is68FacialLandmarkLoading &&
+    !isFeatureExtractorLoading &&
+    !isLoadingFaceDetector;
 
   const startDevice = useCallback(
     async (device: "both" | "audio" | "video") => {
@@ -223,6 +292,42 @@ function MeetingSetup({ onJoin }: Props) {
     ],
   );
 
+  const capture = useCallback(() => {
+    if (
+      modelLoaded &&
+      videoRef.current?.readyState === 4 &&
+      canvasRef.current
+    ) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const webcam = webcamRef.current;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const screenShot = webcam.getScreenshot({
+        width: video.videoWidth,
+        height: video.videoHeight,
+      });
+
+      getFullFaceDescription(screenShot, FACE_DESCRIPTION_MAX_RESULTS)
+        .then((data) => {
+          setImgFullDesc(data);
+        })
+        .catch((e) => console.log("getFullFaceDescription", e));
+      canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext("2d");
+      drawFaceRect(imgFullDesc, ctx);
+
+      if (imgFullDesc?.length > 0) {
+        imgFullDesc.map((desc) => {
+          const bestMatch = faceMatcher?.findBestMatch(desc.descriptor);
+          console.log(bestMatch);
+        });
+      }
+    }
+  }, [modelLoaded, imgFullDesc]);
+
   const changeCameraDevice = useCallback(async () => {
     try {
       const videoConstraint = {
@@ -267,6 +372,27 @@ function MeetingSetup({ onJoin }: Props) {
   }
 
   useEffect(() => {
+    async function matcher() {
+      if (roomFaces) {
+        const roomFacesList = await createMatcher(
+          roomFaces,
+          MATCHING_THRESHOLD,
+        );
+        setFaceMatcher(roomFacesList);
+      }
+    }
+    if (roomFaces) {
+      matcher();
+    }
+  }, [roomFaces]);
+
+  useEffect(() => {
+    let interval;
+    interval = setInterval(capture, DRAW_TIME_INTERVAL);
+    return () => clearInterval(interval);
+  }, [capture]);
+
+  useEffect(() => {
     if (videoDevices) {
       setSelectedMediaDevices((prev) => ({
         ...(prev && prev),
@@ -285,6 +411,7 @@ function MeetingSetup({ onJoin }: Props) {
   }, []);
 
   useEffect(() => {
+    initModels();
     startDevice("both");
   }, []);
 
@@ -306,7 +433,29 @@ function MeetingSetup({ onJoin }: Props) {
     <div className={styled.root}>
       <div className="col">
         <div className="video-wrapper">
-          <video onContextMenu={(e) => e.preventDefault()} ref={videoRef} />
+          <Webcam
+            audioConstraints={meetingRoomPermissions.microphone}
+            screenshotFormat="image/jpeg"
+            videoConstraints={
+              meetingRoomPermissions.camera
+                ? {
+                    deviceId: selectedMediaDevices.video,
+                    width: 740,
+                    height: 416,
+                  }
+                : false
+            }
+            ref={(e) => {
+              videoRef.current = e?.video;
+              webcamRef.current = e;
+            }}
+          />
+          <canvas ref={canvasRef} id="video-canvas" />
+          {(!modelLoaded || (imgFullDesc && imgFullDesc.length < 1)) && (
+            <div className="loading-wrapper">
+              <CircularProgress />
+            </div>
+          )}
           <div className="video-action-wrapper">
             <div className="center">
               <div

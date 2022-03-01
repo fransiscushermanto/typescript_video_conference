@@ -169,7 +169,7 @@ export function useStoreFace(
     { room_id; user_id; face_description; preview_image }
   >(async ({ room_id, user_id, ...resParams }) => {
     const res = await axios.post(
-      `/rooms/${room_id}/face/${user_id}`,
+      `/rooms/${room_id}/faces/${user_id}`,
       resParams,
     );
     return res.data;

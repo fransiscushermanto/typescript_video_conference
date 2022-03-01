@@ -13,9 +13,12 @@ router
 router
   .route("/rooms/:room_id/participants/waiting")
   .get(RoomController.getUsersInWaitingRoom);
-router.route("/rooms/:room_id/face/:user_id").get(RoomController.getUserFaces);
+router.route("/rooms/:room_id/faces").get(RoomController.getRoomFaces);
 router
-  .route("/rooms/:room_id/face/:user_id")
+  .route("/rooms/:room_id/faces/:user_id")
+  .get(RoomController.getRoomUserFaces);
+router
+  .route("/rooms/:room_id/faces/:user_id")
   .post(RoomController.storeUserFace);
 router
   .route("/rooms/:room_id/meetings/verify")
