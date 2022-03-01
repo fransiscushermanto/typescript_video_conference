@@ -157,6 +157,37 @@ async function checkMeeting(room_id, meeting_id) {
   return await admin.checkMeeting(room_id, meeting_id);
 }
 
+async function storeRoomUserFace(
+  room_id,
+  user_id,
+  face_description,
+  preview_image,
+) {
+  await admin.storeRoomUserFace(
+    room_id,
+    user_id,
+    face_description,
+    preview_image,
+  );
+
+  return socket.to(room_id).emit("GET_SAVED_IMAGE");
+}
+
+async function getRoomUserFaces(room_id, user_id) {
+  try {
+    const faces = await admin.getRoomUserFaces(room_id, user_id);
+    return faces
+      ? Object.entries(faces).map(([face_id, payload]) => ({
+          face_id,
+          ...payload,
+          created_at: payload.created_at?.toDate?.(),
+        }))
+      : undefined;
+  } catch (error) {
+    throw error;
+  }
+}
+
 module.exports = {
   getUser,
   createRoom,
@@ -175,4 +206,6 @@ module.exports = {
   getRoomNotifications,
   user_sockets,
   checkMeeting,
+  storeRoomUserFace,
+  getRoomUserFaces,
 };

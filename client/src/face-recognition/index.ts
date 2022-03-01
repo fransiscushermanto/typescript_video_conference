@@ -5,11 +5,6 @@ export async function loadModels() {
   try {
     console.log("MODEL_URL", MODEL_URL);
 
-    // await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-    // await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    // await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-    // await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-
     await faceapi.loadSsdMobilenetv1Model(MODEL_URL);
     console.log("Face Detector Loaded");
 

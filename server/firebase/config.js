@@ -528,6 +528,50 @@ class FirebaseAdmin {
     const meeting = await this.getRoomMeeting(room_id, meeting_id);
     return !!meeting;
   }
+
+  async getRoomUserFaces(room_id, user_id) {
+    try {
+      const user_faces = await this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .collection(collections.room_participants_faces)
+        .doc(user_id)
+        .get();
+
+      return user_faces.data()?.faces;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async storeRoomUserFace(room_id, user_id, face_description, preview_image) {
+    try {
+      const prevUserFaces = await this.getRoomUserFaces(room_id, user_id);
+      const faceId = uuid.v4();
+      const payload = {
+        face_description,
+        preview_image,
+        created_at: new Date(),
+      };
+
+      const docFaces = await this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .collection(collections.room_participants_faces)
+        .doc(user_id);
+      if (prevUserFaces) {
+        docFaces.update({
+          faces: { ...prevUserFaces, [faceId]: payload },
+        });
+      } else {
+        docFaces.set({
+          faces: { [faceId]: payload },
+        });
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 const admin = new FirebaseAdmin();

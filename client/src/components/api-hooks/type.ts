@@ -54,6 +54,11 @@ export interface RoomMeetingModel {
   created_at: Date;
 }
 
+export interface RoomParticipantFaceModel {
+  preview_image: string;
+  face_description: string;
+}
+
 export interface RoomNotificationModel {
   "waiting-room": boolean;
   participants: boolean;

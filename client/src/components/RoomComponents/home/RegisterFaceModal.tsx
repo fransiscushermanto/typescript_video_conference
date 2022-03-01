@@ -1,4 +1,6 @@
 import { css, cx } from "@emotion/css";
+import { CircularProgress } from "@material-ui/core";
+import { CheckCircle } from "@material-ui/icons";
 import {
   FaceDetection,
   FaceLandmarks68,
@@ -6,13 +8,25 @@ import {
   WithFaceLandmarks,
 } from "face-api.js";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
-  drawFaceRect,
-  getFullFaceDescription,
-  loadModels,
-} from "../../../face-recognition";
+  useFaceRecognition,
+  useMediaDevices,
+  useMe,
+  useSocket,
+} from "../../../hooks";
+import { useGetRoomParticipantFaces, useStoreFace } from "../../api-hooks";
+import { range } from "../../helper";
+import {
+  DRAW_TIME_INTERVAL,
+  FACE_DESCRIPTION_MAX_RESULTS,
+  MAX_FACES,
+} from "../constants";
+import CloseIcon from "../../../assets/close.svg";
 
-interface Props {}
+interface Props {
+  onClose?: () => void;
+}
 
 const styled = {
   root: css`
@@ -21,18 +35,41 @@ const styled = {
       padding: 2.5rem 1.25rem;
     }
     .modal-content {
-      height: 100%;
+      height: auto;
+      max-width: 500px;
+      position: relative;
+      padding: 0 1rem;
+
+      .btn-close {
+        position: absolute;
+        top: 0.625rem;
+        right: 0.625rem;
+        span {
+          display: flex;
+        }
+      }
       .modal-header {
         justify-content: center;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 0;
+
+        .subtitle {
+          font-size: 0.875rem;
+        }
       }
       .modal-body {
         flex-direction: column;
-        padding-top: 0;
+        padding: 0;
+        padding-bottom: 1rem;
         align-items: center;
-        max-height: calc(100% - 62px);
+        max-height: calc(100% - 88px);
 
         overflow-y: auto;
 
+        .btn {
+          border-radius: 0.875rem;
+        }
         .error {
           font-size: 0.75rem;
           font-weight: bold;
@@ -41,7 +78,6 @@ const styled = {
         .camera-wrapper {
           width: 100%;
           height: auto;
-          max-width: 500px;
 
           .video-wrapper {
             position: relative;
@@ -64,15 +100,92 @@ const styled = {
               width: 100%;
               height: 100%;
               aspect-ratio: 3/9;
+              border-radius: 0.875rem;
             }
+          }
+
+          .select-video {
+            width: 100%;
+          }
+
+          .btn-save {
+            &:disabled {
+              background-color: white;
+              color: grey;
+              border-color: grey;
+            }
+          }
+        }
+
+        .image-info-list {
+          margin-top: 0.625rem;
+          width: 100%;
+          .image-info {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            align-items: center;
+            &:not(:last-child) {
+              margin-bottom: 0.5rem;
+            }
+
+            .icon {
+              display: flex;
+              margin-right: 0.625rem;
+              > * {
+                width: 0.875rem !important;
+                height: 0.875rem !important;
+              }
+              font-size: 0.875rem;
+            }
+            font-size: 0.875rem;
           }
         }
       }
     }
   `,
+  stale: css`
+    position: relative;
+    display: flex;
+    &::after {
+      content: " ";
+      width: 100%;
+      height: 1px;
+      position: absolute;
+      background-color: grey;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  `,
 };
 
-function RegisterFaceModal({}: Props) {
+const icons = {
+  loading: <CircularProgress />,
+  stale: <div className={styled.stale} />,
+  done: <CheckCircle htmlColor="#1ECBAC" fontSize="inherit" />,
+};
+
+function RegisterFaceModal({ onClose }: Props) {
+  const [me] = useMe();
+  const { room_id } = useParams<{ room_id }>();
+  const socket = useSocket();
+
+  const {
+    getFullFaceDescription,
+    initModels,
+    drawFaceRect,
+    is68FacialLandmarkLoading,
+    isFeatureExtractorLoading,
+    isLoadingFaceDetector,
+  } = useFaceRecognition();
+
+  const modelLoaded =
+    !is68FacialLandmarkLoading &&
+    !isFeatureExtractorLoading &&
+    !isLoadingFaceDetector;
+
+  const { mutate, isLoading: isLoadingStoreFace } = useStoreFace();
+
   const [imgFullDesc, setImgFullDesc] = useState<
     WithFaceDescriptor<
       WithFaceLandmarks<
@@ -83,19 +196,43 @@ function RegisterFaceModal({}: Props) {
       >
     >[]
   >([]);
-  const [modelLoaded, setModelLoaded] = useState(false);
+  const {
+    data: savedImage,
+    refetch: refetchGetParticipantFace,
+    isFetching: isGetParticipantFaceLoading,
+  } = useGetRoomParticipantFaces({ enabled: true });
+  const { videoDevices, refetchUserMedia } = useMediaDevices();
+  const [selectedVideoDevices, setSelectedVideoDevices] =
+    useState<MediaDeviceInfo>();
+  const [localSavedImage, setLocalSavedImage] = useState(savedImage);
+  const [imgPreview, setImagePreview] = useState<string>();
+  const [imgFaceDescriptor, setImgFaceDesctiptor] = useState<Float32Array>();
   const [allowedCamera, setAllowedCamera] = useState<boolean>();
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const localStreamRef = useRef<MediaStream>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const cameraDevices = devices.filter(({ kind }) => kind === "videoinput");
       const localStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 960, height: 720, deviceId: cameraDevices[0].deviceId },
+        video: {
+          width: 960,
+          height: 720,
+          ...(selectedVideoDevices && {
+            deviceId: selectedVideoDevices?.deviceId,
+          }),
+        },
       });
+
+      const selectedVideoDevice = localStream
+        .getTracks()
+        .find((track) => track.kind === "video")
+        .getSettings();
+      console.log("selectedVideoDevice", selectedVideoDevice);
+      if (!videoDevices) refetchUserMedia();
+      localStreamRef.current = localStream;
       videoRef.current.srcObject = localStream;
       videoRef.current.autoplay = true;
       videoRef.current.muted = true;
@@ -104,34 +241,21 @@ function RegisterFaceModal({}: Props) {
       setAllowedCamera(false);
       setErrorMessage("Please allow permission for camera!");
     }
-  };
+  }, [selectedVideoDevices, videoDevices, refetchUserMedia]);
 
-  const onCapture = async () => {
-    const video = videoRef.current;
-
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const canvasCaptureImage = Object.assign(document.createElement("canvas"), {
-      width: video.videoWidth,
-      height: video.videoHeight,
-    }) as HTMLCanvasElement;
-
-    canvasCaptureImage
-      .getContext("2d", { alpha: false })
-      .drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-
-    canvasCaptureImage.toBlob(async (blob) => {
-      const url = window.URL.createObjectURL(blob);
-      getFullFaceDescription(url).then((data) => setImgFullDesc(data));
-      // const ctx = canvas.getContext("2d");
-      // drawFaceRect(fullDesc, ctx);
-    });
+  const stopCamera = async () => {
+    localStreamRef.current &&
+      localStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
   };
 
   const capture = useCallback(() => {
-    if (modelLoaded && videoRef.current.readyState === 4) {
+    if (
+      modelLoaded &&
+      videoRef.current?.readyState === 4 &&
+      canvasRef.current
+    ) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       canvas.width = video.videoWidth;
@@ -156,7 +280,13 @@ function RegisterFaceModal({}: Props) {
       canvasCaptureImage.toBlob(async (blob) => {
         if (blob) {
           const url = window.URL.createObjectURL(blob);
-          getFullFaceDescription(url).then((data) => setImgFullDesc(data));
+          setImagePreview(url);
+          getFullFaceDescription(url, FACE_DESCRIPTION_MAX_RESULTS).then(
+            (data) => {
+              setImgFullDesc(data);
+              setImgFaceDesctiptor(data[0]?.descriptor);
+            },
+          );
           canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
           const ctx = canvas.getContext("2d");
           drawFaceRect(imgFullDesc, ctx);
@@ -166,29 +296,66 @@ function RegisterFaceModal({}: Props) {
   }, [modelLoaded, imgFullDesc]);
 
   useEffect(() => {
-    const interval = setInterval(capture, 100);
-    return () => clearInterval(interval);
-  }, [capture]);
+    setLocalSavedImage(savedImage);
+  }, [savedImage]);
 
   useEffect(() => {
-    (async function init() {
-      await loadModels();
-      startCamera();
-      setModelLoaded(true);
-    })();
+    let interval;
+    if (localSavedImage?.length !== MAX_FACES) {
+      interval = setInterval(capture, DRAW_TIME_INTERVAL);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [capture, localSavedImage]);
+
+  useEffect(() => {
+    if (videoDevices) {
+      setSelectedVideoDevices(videoDevices[0]);
+    }
+  }, [videoDevices]);
+
+  useEffect(() => {
+    startCamera();
+  }, [startCamera]);
+
+  useEffect(() => {
+    initModels();
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  useEffect(() => {
+    socket.on("GET_SAVED_IMAGE", () => {
+      refetchGetParticipantFace();
+    });
   }, []);
 
   return (
     <div className={cx(styled.root, "modal")}>
       <div className="modal-content">
+        {localSavedImage?.length === MAX_FACES && (
+          <div role="button" onClick={onClose} className="btn-close">
+            <span>
+              <img src={CloseIcon} alt="close" />
+            </span>
+          </div>
+        )}
+
         <div className="modal-header">
-          <div className="title">Please Register Your Face!</div>
+          <h3 className="title">Face Registration Form</h3>
+          <div className="subtitle">
+            Please register 2 faces for your meeting attendance.
+          </div>
         </div>
         <div className="modal-body">
           <div className="camera-wrapper">
             <div id="video-wrapper" className="video-wrapper">
               <video ref={videoRef} />
-              <canvas ref={canvasRef} id="video-canvas" />
+              {localSavedImage?.length !== MAX_FACES && (
+                <canvas ref={canvasRef} id="video-canvas" />
+              )}
               {!allowedCamera && (
                 <button
                   disabled={!modelLoaded}
@@ -204,21 +371,69 @@ function RegisterFaceModal({}: Props) {
                 <span>{errorMessage}</span>
               </div>
             )}
-            <button
-              onClick={onCapture}
-              className="btn btn-outline-primary btn-block mt-1"
-              disabled={!allowedCamera || imgFullDesc.length >= 2}
+
+            <select
+              className="select-video mt-1"
+              onChange={(e) =>
+                setSelectedVideoDevices(
+                  videoDevices.find(
+                    (device) => device.deviceId === e.target.value,
+                  ),
+                )
+              }
             >
-              Capture
-            </button>
-            <ul className="image-list">
-              {imgFullDesc.map((data) => (
-                <li style={{ wordBreak: "break-all" }}>
-                  <span>{data.descriptor.toString()}</span>
-                </li>
+              {videoDevices?.map((device) => (
+                <option value={device.deviceId}>{device.label}</option>
               ))}
-            </ul>
+            </select>
+
+            <button
+              className="btn btn-primary btn-block mt-1 btn-save"
+              onClick={() => {
+                mutate({
+                  room_id,
+                  user_id: me.user_id,
+                  face_description: imgFaceDescriptor.toString(),
+                  preview_image: imgPreview,
+                });
+              }}
+              disabled={
+                !allowedCamera ||
+                imgFullDesc.length >= 2 ||
+                !imgFaceDescriptor ||
+                (imgFaceDescriptor && imgFaceDescriptor.length !== 128) ||
+                isLoadingStoreFace ||
+                isGetParticipantFaceLoading ||
+                localSavedImage?.length === MAX_FACES
+              }
+            >
+              Save
+            </button>
           </div>
+          <ul className="image-info-list">
+            {range(MAX_FACES).map((_, i) => {
+              const currentIndex = i + 1;
+              function handleIcon() {
+                if (
+                  ((!localSavedImage && i === 0) ||
+                    localSavedImage?.length === i) &&
+                  (isLoadingStoreFace || isGetParticipantFaceLoading)
+                )
+                  return "loading";
+
+                if (localSavedImage?.length >= currentIndex) return "done";
+
+                return "stale";
+              }
+
+              return (
+                <li className="image-info">
+                  <span className="icon">{icons[handleIcon()]}</span>
+                  <span>Image {currentIndex}</span>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
     </div>

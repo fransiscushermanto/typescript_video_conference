@@ -7,8 +7,8 @@ import { MessageContext } from "../../Providers/MessageProvider";
 import { Severities } from "../../CustomSnackbar";
 import { useMeetingRoom, useRoomSocket } from "../../../hooks";
 import {
-  RoomPermission,
   videoConstraints,
+  MeetingRoomPermissionModel,
 } from "../../Providers/MeetingRoomProvider";
 import { generateEmptyMediaTrack } from "../../helper";
 import { useHistory } from "react-router-dom";
@@ -22,20 +22,21 @@ const MeetingRoomFooter = () => {
   const {
     localStreamRef,
     localVideoRef,
-    roomState: [room, setRoom],
+    meetingRoomPermissionState: [
+      meetingRoomPermission,
+      setMeetingRoomPermission,
+    ],
   } = useMeetingRoom();
   const permission = React.useMemo(
-    () => ({ ...room?.room_permission }),
-    [room?.room_permission],
+    () => ({ ...meetingRoomPermission }),
+    [meetingRoomPermission],
   );
 
   const setPermission = useCallback(
-    (_permission: RoomPermission) => {
-      setRoom((prev) => {
-        return { ...prev, room_permission: _permission };
-      });
+    (_permission: MeetingRoomPermissionModel) => {
+      setMeetingRoomPermission((prev) => _permission);
     },
-    [setRoom],
+    [setMeetingRoomPermission],
   );
 
   const updateStream = useCallback(
@@ -78,10 +79,6 @@ const MeetingRoomFooter = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [permission, setPermission, roomSocket],
   );
-
-  useEffect(() => {
-    console.log("permission", permission);
-  }, [permission]);
 
   async function onClick(target: "mic" | "cam") {
     await updateStream(target);

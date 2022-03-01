@@ -26,3 +26,7 @@ export const menus = [
   //   label: "Settings",
   // },
 ];
+
+export const FACE_DESCRIPTION_MAX_RESULTS = 160;
+export const DRAW_TIME_INTERVAL = 200;
+export const MAX_FACES = 2;

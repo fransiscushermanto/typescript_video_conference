@@ -13,6 +13,7 @@ import {
   RoomModel,
   RoomNotificationModel,
   UserInWaitingRoomModel,
+  RoomParticipantFaceModel,
 } from "./type";
 
 interface Participant {
@@ -322,6 +323,26 @@ export function useGetMeetingRoomInfo(
       ...options,
       refetchOnWindowFocus: options.refetchOnWindowFocus || false,
       enabled: options.enabled || false,
+    },
+  );
+}
+
+export function useGetRoomParticipantFaces(
+  options: UseQueryOptions<RoomParticipantFaceModel[], any> = {},
+) {
+  const [me] = useMe();
+  const { room_id } = useParams<{ room_id }>();
+
+  return useQuery<RoomParticipantFaceModel[], any>(
+    "room-participant-face",
+    async () => {
+      const res = await axios.get(`/rooms/${room_id}/face/${me.user_id}`);
+      return res.data.user_faces;
+    },
+    {
+      ...options,
+      enabled: options.enabled || false,
+      refetchOnWindowFocus: options.refetchOnWindowFocus || false,
     },
   );
 }

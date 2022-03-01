@@ -42,6 +42,7 @@ const servers: RTCConfiguration = {
 
 interface Props {
   children: React.ReactNode;
+  isReadyToJoin: boolean;
 }
 
 enum ParticipantType {
@@ -64,18 +65,9 @@ interface RTCIncomingCandidate extends Omit<Participant, "socket_id"> {
   candidate: RTCIceCandidate;
 }
 
-export interface RoomPermission {
+export interface MeetingRoomPermissionModel {
   camera?: boolean;
   microphone?: boolean;
-}
-
-interface RoomModel {
-  room_id?: string;
-  room_password?: string;
-  room_host?: string;
-  room_participants?: Participant[];
-  room_name?: string;
-  room_permission?: RoomPermission;
 }
 
 interface CallModel {
@@ -88,8 +80,16 @@ export interface WebRTCUser extends Participant {
   stream: MediaStream;
 }
 
+export interface MediaDevices {
+  video?: string;
+  audio?: string;
+}
+
 interface ContextType {
-  roomState: [RoomModel, React.Dispatch<React.SetStateAction<RoomModel>>];
+  meetingRoomPermissionState: [
+    MeetingRoomPermissionModel,
+    React.Dispatch<React.SetStateAction<MeetingRoomPermissionModel>>,
+  ];
   participantsState: [
     MediaStream | any | undefined,
     React.Dispatch<React.SetStateAction<WebRTCUser[]>>,
@@ -97,33 +97,35 @@ interface ContextType {
   localVideoRef: React.MutableRefObject<HTMLVideoElement>;
   localStreamRef: React.MutableRefObject<MediaStream>;
   callState: [CallModel, React.Dispatch<React.SetStateAction<CallModel>>];
+  selectedMediaDevices: [
+    MediaDevices,
+    React.Dispatch<React.SetStateAction<MediaDevices>>,
+  ];
 }
 
 export const videoConstraints = {
   width: { min: 640, ideal: 960, max: 1920 },
   height: { min: 576, ideal: 720, max: 1080 },
-  facingMode: "user",
 };
 
 const MeetingRoomContext = React.createContext<ContextType>({
-  roomState: [
+  meetingRoomPermissionState: [
     {
-      room_permission: {
-        camera: true,
-        video: true,
-      },
-    } as RoomModel,
+      camera: true,
+      microphone: true,
+    },
     () => {},
   ],
   participantsState: [[], () => {}],
   localStreamRef: { current: undefined },
   localVideoRef: { current: undefined },
   callState: [{}, () => {}],
+  selectedMediaDevices: [{}, () => {}],
 });
 
 const emptyMediaStream = generateEmptyMediaTrack();
 
-const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
+const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
   const roomSocket = useRoomSocket();
 
   const localStreamRef = useRef<MediaStream>();
@@ -132,22 +134,30 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   const audioSender = useRef<{ [user_id: string]: RTCRtpSender }>({});
   const pcsRef = useRef<{ [user_id: string]: RTCPeerConnection }>({});
   const [me] = useMe();
-  const [room, setRoom] = useState<RoomModel>(
-    JSON.parse(sessionStorage.getItem("room")) || {
-      room_permission: { camera: true, microphone: true },
-    },
-  );
+  const [meetingRoomPermission, setMeetingRoomPermission] =
+    useState<MeetingRoomPermissionModel>({
+      camera: true,
+      microphone: true,
+    });
+
+  const [selectedMediaDevices, setSelectedMediaDevices] =
+    useState<MediaDevices>({});
   const [participants, setParticipants] = useState<WebRTCUser[]>([]);
   const [call, setCall] = useState<CallModel>();
 
   const { meeting_id, room_id } = useParams<{ meeting_id; room_id }>();
 
-  const getLocalStream = React.useCallback(async () => {
+  const startCamera = React.useCallback(async () => {
     try {
-      console.log("getLocalStream");
+      const video = meetingRoomPermission.camera && {
+        ...videoConstraints,
+        ...(selectedMediaDevices.video && {
+          deviceId: selectedMediaDevices.video,
+        }),
+      };
       const localStream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: videoConstraints,
+        audio: meetingRoomPermission.microphone,
+        video,
       });
       console.log("stream local", localStream.getTracks());
       localStreamRef.current = localStream;
@@ -158,21 +168,27 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
       }
     } catch (error) {
       localStreamRef.current = emptyMediaStream;
-      setRoom({
-        ...room,
-        room_permission: {
-          microphone: false,
-          camera: false,
-        },
+      setMeetingRoomPermission({
+        microphone: false,
+        camera: false,
       });
-      console.log("getLocalStream", error);
+      console.log("startCamera", error);
     }
+  }, [
+    meetingRoomPermission.camera,
+    meetingRoomPermission.microphone,
+    selectedMediaDevices.video,
+  ]);
+
+  const getLocalStream = React.useCallback(async () => {
+    console.log("getLocalStream");
+    await startCamera();
     roomSocket?.emit("JOIN_MEETING_ROOM", {
       room_id,
       meeting_id,
       me,
     });
-  }, [roomSocket]);
+  }, [me, meeting_id, roomSocket, room_id, startCamera]);
 
   const createPeerConnection = React.useCallback(
     (participant: Participant) => {
@@ -275,10 +291,10 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
   );
 
   useEffect(() => {
-    if (roomSocket) {
+    if (roomSocket && isReadyToJoin) {
       getLocalStream();
     }
-  }, [roomSocket]);
+  }, [roomSocket, isReadyToJoin, getLocalStream]);
 
   useEffect(() => {
     roomSocket?.on(
@@ -530,7 +546,11 @@ const MeetingRoomProvider: React.FC<Props> = ({ children }) => {
       value={{
         localStreamRef,
         localVideoRef,
-        roomState: [room, setRoom],
+        meetingRoomPermissionState: [
+          meetingRoomPermission,
+          setMeetingRoomPermission,
+        ],
+        selectedMediaDevices: [selectedMediaDevices, setSelectedMediaDevices],
         participantsState: [participants, setParticipants],
         callState: [call, setCall],
       }}

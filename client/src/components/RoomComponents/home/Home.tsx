@@ -2,13 +2,18 @@ import { css, cx } from "@emotion/css";
 import { format } from "date-fns";
 import React, { useEffect, useRef, useState } from "react";
 import { useMeasure, useSocket } from "../../../hooks";
-import { useGetRoomMeetings } from "../../api-hooks";
+import {
+  useGetRoomMeetings,
+  useGetRoomParticipantFaces,
+} from "../../api-hooks";
 import { Close } from "../../Shapes";
 import { groupMeetingByDate } from "./helper";
 import MeetingCard from "./MeetingCard";
 import NewMeetingForm from "./NewMeetingForm";
 import useRoomSocket from "./../../../hooks/use-room-socket";
 import RegisterFaceModal from "./RegisterFaceModal";
+import { queryClient } from "../../..";
+import { MAX_FACES } from "../constants";
 
 const styled = {
   root: css`
@@ -68,6 +73,11 @@ const styled = {
   `,
 };
 
+const INITIAL_MODAL = {
+  "new-meeting": false,
+  "register-face": false,
+};
+
 function Home() {
   const roomSocket = useRoomSocket();
   const socket = useSocket();
@@ -75,26 +85,37 @@ function Home() {
   const bounds = useMeasure(rootRef);
 
   const [meetingsActiveParticipant, setMeetingActiveParticipant] = useState({});
-  const [openModal, setOpenModal] = useState(false);
+  const [openModal, setOpenModal] = useState(INITIAL_MODAL);
 
   const { roomMeetings } = useGetRoomMeetings({ enabled: true });
+  const { data: participantFaces, isFetching: isParticipantFaceLoading } =
+    useGetRoomParticipantFaces({
+      enabled: true,
+    });
 
   const groupedRoomMeetings = React.useMemo(
     () => groupMeetingByDate(roomMeetings),
     [roomMeetings],
   );
 
-  function handleOpenModal() {
-    setOpenModal(true);
+  function handleOpenModal(modalKey: "new-meeting" | "register-face") {
+    setOpenModal((prev) => ({ ...prev, [modalKey]: true }));
   }
 
-  function handleCloseModal() {
-    setOpenModal(false);
+  function handleCloseModal(modalKey?: "new-meeting" | "register-face") {
+    if (!modalKey) setOpenModal(INITIAL_MODAL);
+
+    setOpenModal((prev) => ({ ...prev, [modalKey]: false }));
   }
 
   useEffect(() => {
     roomSocket?.emit("GET_MEETING_ACTIVE_PARTICIPANTS");
   }, [roomSocket]);
+
+  useEffect(() => {
+    if (participantFaces?.length !== MAX_FACES && !isParticipantFaceLoading)
+      handleOpenModal("register-face");
+  }, [isParticipantFaceLoading, participantFaces]);
 
   useEffect(() => {
     socket.on("MEETING_ACTIVE_PARTICIPANTS", ({ participants }) => {
@@ -110,6 +131,11 @@ function Home() {
         });
       },
     );
+
+    return () => {
+      queryClient.resetQueries("room-participant-face");
+      handleCloseModal();
+    };
   }, []);
 
   return (
@@ -117,7 +143,7 @@ function Home() {
       <header>
         <button
           className="btn btn-primary new-meeting"
-          onClick={handleOpenModal}
+          onClick={() => handleOpenModal("new-meeting")}
         >
           New Meeting
         </button>
@@ -152,19 +178,26 @@ function Home() {
           })}
       </div>
 
-      <RegisterFaceModal />
+      {openModal["register-face"] && (
+        <RegisterFaceModal onClose={() => handleCloseModal("register-face")} />
+      )}
 
-      {openModal && (
+      {openModal["new-meeting"] && (
         <div className="create-meeting-modal modal backdrop">
           <div className="modal-content">
             <div className="modal-header">
               <div className="title">New Meeting</div>
-              <div className="close" onClick={handleCloseModal}>
+              <div
+                className="close"
+                onClick={() => handleCloseModal("new-meeting")}
+              >
                 <Close />
               </div>
             </div>
             <div className="modal-body">
-              <NewMeetingForm handleCloseModal={handleCloseModal} />
+              <NewMeetingForm
+                handleCloseModal={() => handleCloseModal("new-meeting")}
+              />
             </div>
           </div>
         </div>

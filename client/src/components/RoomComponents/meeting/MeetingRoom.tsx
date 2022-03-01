@@ -1,7 +1,8 @@
-import React, { memo, useContext, useEffect } from "react";
+import React, { memo, useContext, useEffect, useState } from "react";
 import RoomFooter from "./MeetingRoomFooter";
 import RoomHeader from "./MeetingRoomHeader";
 import RoomMain from "./MeetingRoomMain";
+import MeetingSetup from "./MeetingSetup";
 import { Severities } from "../../CustomSnackbar";
 import { MessageContext } from "../../Providers/MessageProvider";
 import { useMediaQuery, useRoomSocket } from "../../../hooks";
@@ -9,6 +10,7 @@ import { useParams } from "react-router-dom";
 import { css, cx } from "@emotion/css";
 import { setMobileCSSHeightProperty } from "../../helper";
 import { useGetMeetingRoomInfo } from "../../api-hooks";
+import { MeetingRoomProvider } from "../../Providers/MeetingRoomProvider";
 
 interface Props {}
 
@@ -20,10 +22,12 @@ const styled = {
 };
 
 const MeetingRoom: React.FC<Props> = () => {
-  const [messages, setMessages] = useContext(MessageContext);
   const roomSocket = useRoomSocket();
-  const { meeting_id, room_id } = useParams<{ meeting_id; room_id }>();
   const isNotDesktop = useMediaQuery(`(max-width: 768px)`);
+  const [messages, setMessages] = useContext(MessageContext);
+  const { meeting_id, room_id } = useParams<{ meeting_id; room_id }>();
+
+  const [isReadyToJoin, setIsReadyToJoin] = useState<boolean>(false);
 
   useGetMeetingRoomInfo({ meeting_id, room_id }, { enabled: true });
 
@@ -57,11 +61,17 @@ const MeetingRoom: React.FC<Props> = () => {
   }, [roomSocket, setMessages]);
 
   return (
-    <div className={cx(styled.root, "meeting-room-wrapper wrapper")}>
-      <RoomHeader />
-      <RoomMain />
-      <RoomFooter />
-    </div>
+    <MeetingRoomProvider isReadyToJoin={isReadyToJoin}>
+      {isReadyToJoin ? (
+        <div className={cx(styled.root, "meeting-room-wrapper wrapper")}>
+          <RoomHeader />
+          <RoomMain />
+          <RoomFooter />
+        </div>
+      ) : (
+        <MeetingSetup onJoin={() => setIsReadyToJoin(true)} />
+      )}
+    </MeetingRoomProvider>
   );
 };
 

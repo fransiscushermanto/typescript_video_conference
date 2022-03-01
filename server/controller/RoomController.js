@@ -1,4 +1,5 @@
 const fs = require("fs");
+const { send } = require("process");
 
 const utils = require("../utils/Utils");
 
@@ -140,51 +141,29 @@ module.exports = {
       return res.status(500).send({ message: "Internal Server Error", error });
     }
   },
-  getParticipants: (req, res, next) => {
-    return res.status(200).send({
-      success: true,
-      participants: utils.getParticipants(),
-    });
-  },
-  isHost: (req, res, next) => {
-    const { user_id, room_id } = req.body;
+  storeUserFace: async (req, res, next) => {
+    const { room_id, user_id } = req.params;
+    const { face_description, preview_image } = req.body;
     try {
-      const host = utils.getRoomHost(room_id);
-      if (host.user_id !== user_id) {
-        return res.status(200).send({ success: true, status: false });
-      }
-      return res.status(200).send({ success: true, status: true });
+      await utils.storeRoomUserFace(
+        room_id,
+        user_id,
+        face_description,
+        preview_image,
+      );
+      return res.status(200).send();
     } catch (error) {
-      return res.status(400).send({ success: false, message: error });
+      return res.status(500).send({ message: "Internal Server Error", error });
     }
   },
-  getRoomDetails: (req, res, next) => {
-    const { room_id } = req.query;
-    if (utils.existMeetingRoom(room_id)) {
-      return res.status(200).send(utils.getRoomDetails(room_id));
-    }
+  getUserFaces: async (req, res, next) => {
+    const { room_id, user_id } = req.params;
 
-    return res.status(200).send({});
-  },
-  updateRoom: (req, res, next) => {
-    const { room_id, room_host, room_password } = req.body;
     try {
-      if (utils.existMeetingRoom(room_id)) {
-        const result = utils.updateRoom({
-          room_id,
-          room_host,
-          room_password,
-        });
-        return res.status(200).send({ success: true, data: result });
-      }
-      return res.status(400).send({ success: false });
+      const user_faces = await utils.getRoomUserFaces(room_id, user_id);
+      return res.status(200).send({ user_faces });
     } catch (error) {
-      console.log(error);
-      return res.status(400).send({ success: false });
+      return res.status(500).send({ message: "Internal Server Error", error });
     }
-  },
-  flushRoom: (req, res, next) => {
-    rooms = [];
-    res.status(200).send({ success: true, rooms });
   },
 };

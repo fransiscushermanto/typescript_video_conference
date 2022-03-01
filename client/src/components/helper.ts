@@ -206,3 +206,7 @@ export function generateEmptyMediaTrack() {
   const videoTrack = createEmptyVideoTrack({ width: 960, height: 720 });
   return new MediaStream([audioTrack, videoTrack]);
 }
+
+export function range(n: number) {
+  return Array(n).fill(n);
+}

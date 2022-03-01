@@ -155,3 +155,23 @@ export function useCheckRoomMeeting(
     },
   );
 }
+
+export function useStoreFace(
+  options: UseMutationOptions<
+    any,
+    any,
+    { room_id; user_id; face_description; preview_image }
+  > = {},
+) {
+  return useMutation<
+    any,
+    any,
+    { room_id; user_id; face_description; preview_image }
+  >(async ({ room_id, user_id, ...resParams }) => {
+    const res = await axios.post(
+      `/rooms/${room_id}/face/${user_id}`,
+      resParams,
+    );
+    return res.data;
+  }, options);
+}

@@ -13,7 +13,7 @@ import { ReactQueryDevtools } from "react-query/devtools";
 import GlobalStyles from "./styles/app";
 import { SocketProvider } from "./components/Providers/SocketProvider";
 
-const queryClient = new QueryClient();
+export const queryClient = new QueryClient();
 
 ReactDOM.render(
   <BrowserRouter>
