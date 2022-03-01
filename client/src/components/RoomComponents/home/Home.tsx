@@ -113,7 +113,10 @@ function Home() {
   }, [roomSocket]);
 
   useEffect(() => {
-    if (participantFaces?.length !== MAX_FACES && !isParticipantFaceLoading)
+    if (
+      (!participantFaces || participantFaces?.length < MAX_FACES) &&
+      !isParticipantFaceLoading
+    )
       handleOpenModal("register-face");
   }, [isParticipantFaceLoading, participantFaces]);
 

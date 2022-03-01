@@ -210,3 +210,5 @@ export function generateEmptyMediaTrack() {
 export function range(n: number) {
   return Array(n).fill(n);
 }
+
+export const b64toBlob = (base64) => fetch(base64).then((res) => res.blob());

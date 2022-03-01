@@ -28,5 +28,5 @@ export const menus = [
 ];
 
 export const FACE_DESCRIPTION_MAX_RESULTS = 160;
-export const DRAW_TIME_INTERVAL = 200;
+export const DRAW_TIME_INTERVAL = 600;
 export const MAX_FACES = 2;

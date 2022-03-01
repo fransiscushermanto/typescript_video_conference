@@ -16,13 +16,14 @@ import {
   useSocket,
 } from "../../../hooks";
 import { useGetRoomParticipantFaces, useStoreFace } from "../../api-hooks";
-import { range } from "../../helper";
+import { b64toBlob, range } from "../../helper";
 import {
   DRAW_TIME_INTERVAL,
   FACE_DESCRIPTION_MAX_RESULTS,
   MAX_FACES,
 } from "../constants";
 import CloseIcon from "../../../assets/close.svg";
+import Webcam from "react-webcam";
 
 interface Props {
   onClose?: () => void;
@@ -83,6 +84,7 @@ const styled = {
             position: relative;
             width: 100%;
             height: 400px;
+            border-radius: 0.875rem;
             #video-canvas {
               position: absolute;
               left: 0;
@@ -101,6 +103,18 @@ const styled = {
               height: 100%;
               aspect-ratio: 3/9;
               border-radius: 0.875rem;
+            }
+
+            .loading-wrapper {
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              left: 0;
+              top: 0;
+              background-color: rgba(0, 0, 0, 0.5);
+              display: flex;
+              justify-content: center;
+              align-items: center;
             }
           }
 
@@ -211,6 +225,7 @@ function RegisterFaceModal({ onClose }: Props) {
 
   const localStreamRef = useRef<MediaStream>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const startCamera = useCallback(async () => {
@@ -260,42 +275,40 @@ function RegisterFaceModal({ onClose }: Props) {
     ) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
+      const webcam = webcamRef.current;
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      const canvasCaptureImage = Object.assign(
-        document.createElement("canvas"),
-        {
-          width: video.videoWidth,
-          height: video.videoHeight,
-        },
-      ) as HTMLCanvasElement;
-
-      canvasCaptureImage
-        .getContext("2d")
-        .clearRect(0, 0, canvasCaptureImage.width, canvasCaptureImage.height);
-
-      canvasCaptureImage
-        .getContext("2d", { alpha: false })
-        .drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-
-      canvasCaptureImage.toBlob(async (blob) => {
-        if (blob) {
-          const url = window.URL.createObjectURL(blob);
-          setImagePreview(url);
-          getFullFaceDescription(url, FACE_DESCRIPTION_MAX_RESULTS).then(
-            (data) => {
-              setImgFullDesc(data);
-              setImgFaceDesctiptor(data[0]?.descriptor);
-            },
-          );
-          canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
-          const ctx = canvas.getContext("2d");
-          drawFaceRect(imgFullDesc, ctx);
-        }
+      const screenShot = webcam.getScreenshot({
+        width: video.videoWidth,
+        height: video.videoHeight,
       });
+
+      setImagePreview(screenShot);
+      getFullFaceDescription(screenShot, FACE_DESCRIPTION_MAX_RESULTS)
+        .then((data) => {
+          setImgFullDesc(data);
+          setImgFaceDesctiptor(data[0]?.descriptor);
+        })
+        .catch((e) => console.log("getFullFaceDescription", e));
+      canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext("2d");
+      drawFaceRect(imgFullDesc, ctx);
     }
   }, [modelLoaded, imgFullDesc]);
+
+  const onSave = useCallback(async () => {
+    const blob = await b64toBlob(imgPreview);
+    const url = window.URL.createObjectURL(blob);
+
+    mutate({
+      room_id,
+      user_id: me.user_id,
+      face_description: imgFaceDescriptor.toString(),
+      preview_image: url,
+    });
+  }, [imgFaceDescriptor, imgPreview, me.user_id, mutate, room_id]);
 
   useEffect(() => {
     setLocalSavedImage(savedImage);
@@ -313,7 +326,7 @@ function RegisterFaceModal({ onClose }: Props) {
 
   useEffect(() => {
     startCamera();
-  }, [startCamera]);
+  }, []);
 
   useEffect(() => {
     initModels();
@@ -348,7 +361,19 @@ function RegisterFaceModal({ onClose }: Props) {
         <div className="modal-body">
           <div className="camera-wrapper">
             <div id="video-wrapper" className="video-wrapper">
-              <video ref={videoRef} />
+              <Webcam
+                screenshotFormat="image/jpeg"
+                videoConstraints={{
+                  deviceId: selectedVideoDevices,
+                  width: 960,
+                  height: 720,
+                }}
+                ref={(e) => {
+                  videoRef.current = e?.video;
+                  webcamRef.current = e;
+                }}
+              />
+              {/* <video ref={videoRef} /> */}
               {localSavedImage?.length !== MAX_FACES && (
                 <canvas ref={canvasRef} id="video-canvas" />
               )}
@@ -360,6 +385,11 @@ function RegisterFaceModal({ onClose }: Props) {
                 >
                   Start Video
                 </button>
+              )}
+              {(!modelLoaded || !imgFaceDescriptor) && (
+                <div className="loading-wrapper">
+                  <CircularProgress />
+                </div>
               )}
             </div>
             {typeof allowedCamera !== "undefined" && !allowedCamera && (
@@ -380,14 +410,7 @@ function RegisterFaceModal({ onClose }: Props) {
 
             <button
               className="btn btn-primary btn-block mt-1 btn-save"
-              onClick={() => {
-                mutate({
-                  room_id,
-                  user_id: me.user_id,
-                  face_description: imgFaceDescriptor.toString(),
-                  preview_image: imgPreview,
-                });
-              }}
+              onClick={onSave}
               disabled={
                 !allowedCamera ||
                 imgFullDesc?.length >= 2 ||
