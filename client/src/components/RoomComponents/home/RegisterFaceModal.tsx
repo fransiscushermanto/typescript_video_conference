@@ -390,7 +390,7 @@ function RegisterFaceModal({ onClose }: Props) {
               }}
               disabled={
                 !allowedCamera ||
-                imgFullDesc.length >= 2 ||
+                imgFullDesc?.length >= 2 ||
                 !imgFaceDescriptor ||
                 (imgFaceDescriptor && imgFaceDescriptor.length !== 128) ||
                 isLoadingStoreFace ||
