@@ -33,6 +33,10 @@ export interface OptionsObject {
   action?: SnackbarAction;
 }
 
+export interface SnackbarItem extends OptionsObject {
+  message: string;
+}
+
 export interface SnackbarProviderProps {
   children: React.ReactNode;
   /**

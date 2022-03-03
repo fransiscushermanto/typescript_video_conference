@@ -30,14 +30,20 @@ router.route("/:user_id/rooms").get(RoomController.getRooms);
 router.route("/users/verify-room").post(RoomController.checkUserRoom);
 router.route("/users/info").post(RoomController.getUserInfo);
 
-router.route("/meetings/create").post(MeetingController.createMeeting);
 router.route("/meetings/:room_id").get(MeetingController.getRoomMeetings);
+router.route("/meetings/:room_id/create").post(MeetingController.createMeeting);
 router
   .route("/meetings/:room_id/:meeting_id")
   .get(MeetingController.getMeetingRoomInfo);
 router
   .route("/meetings/:room_id/:meeting_id")
   .delete(MeetingController.deleteMeeting);
+router
+  .route("/meetings/:room_id/:meeting_id/attendance")
+  .post(MeetingController.storeParticipantMeetingAttendance);
+router
+  .route("/meetings/:room_id/:meeting_id/attendance/:user_id")
+  .get(MeetingController.getParticipantMeetingAttendance);
 
 router
   .route("/notifications/:user_id/rooms/:room_id")

@@ -2,6 +2,7 @@ import { css, cx } from "@emotion/css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   useFaceRecognition,
+  useMe,
   useMediaDevices,
   useMeetingRoom,
 } from "../../../hooks";
@@ -11,7 +12,12 @@ import MicrophoneSVG from "../../../assets/microphone.svg";
 import NoMicrophoneSVG from "../../../assets/no-microphone-white.svg";
 import { MessageContext } from "../../Providers/MessageProvider";
 import { Severities } from "../../CustomSnackbar";
-import { generateEmptyMediaTrack } from "../../helper";
+import {
+  b64toBlob,
+  dataURLtoFile,
+  formatTimeDurationToReadableFormat,
+  generateEmptyMediaTrack,
+} from "../../helper";
 import Webcam from "react-webcam";
 import {
   DRAW_TIME_INTERVAL,
@@ -26,7 +32,15 @@ import {
   WithFaceDescriptor,
   WithFaceLandmarks,
 } from "face-api.js";
-import { useGetRoomFaces } from "../../api-hooks";
+import {
+  useGetMeetingRoomInfo,
+  useGetParticipantMeetingAttendance,
+  useGetRoomParticipantFaces,
+  useGetRoomParticipants,
+  useStoreParticipantAttendance,
+} from "../../api-hooks";
+import { useParams } from "react-router-dom";
+import useFirebase from "./../../../hooks/use-firebase";
 
 interface Props {
   onJoin: () => void;
@@ -36,6 +50,7 @@ const styled = {
   root: css`
     display: flex;
     flex-direction: row;
+    justify-content: center;
     height: 100%;
 
     @media (max-width: 768px) {
@@ -52,6 +67,14 @@ const styled = {
         width: 100%;
         max-width: 740px;
         height: 100%;
+
+        .attendance-warning {
+          margin-bottom: 1.25rem;
+          text-align: center;
+          p {
+            margin: 0;
+          }
+        }
         .video-wrapper {
           position: relative;
           width: 100%;
@@ -155,6 +178,9 @@ const styled = {
 const emptyMediaTrack = generateEmptyMediaTrack();
 
 function MeetingSetup({ onJoin }: Props) {
+  const firebase = useFirebase();
+  const [me] = useMe();
+  const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
   const [messages, setMessages] = React.useContext(MessageContext);
   const {
     selectedMediaDevicesState: [selectedMediaDevices, setSelectedMediaDevices],
@@ -164,6 +190,11 @@ function MeetingSetup({ onJoin }: Props) {
     ],
   } = useMeetingRoom();
 
+  const [isAttendanceExpired, setIsAttendanceExpired] =
+    useState<boolean>(false);
+  const [strAttendanceDuration, setStrAttendanceDuration] =
+    useState<string>("");
+  const [stopDetection, setStopDetection] = useState<boolean>(false);
   const [faceMatcher, setFaceMatcher] = useState<FaceMatcher>();
   const [imgFullDesc, setImgFullDesc] = useState<
     WithFaceDescriptor<
@@ -176,12 +207,21 @@ function MeetingSetup({ onJoin }: Props) {
     >[]
   >([]);
 
-  const { data: roomFaces } = useGetRoomFaces({ enabled: true });
+  const { participants } = useGetRoomParticipants();
+  const { data: meetingInfo } = useGetMeetingRoomInfo(
+    { room_id, meeting_id },
+    { enabled: true },
+  );
+  const { data: faces } = useGetRoomParticipantFaces({ enabled: true });
+  const { data: participantMeetingAttendance } =
+    useGetParticipantMeetingAttendance({ enabled: true });
+
+  const { mutateAsync } = useStoreParticipantAttendance();
 
   const {
     getFullFaceDescription,
     initModels,
-    drawFaceRect,
+    drawRectAndLabelFace,
     is68FacialLandmarkLoading,
     isFeatureExtractorLoading,
     isLoadingFaceDetector,
@@ -205,8 +245,8 @@ function MeetingSetup({ onJoin }: Props) {
     async (device: "both" | "audio" | "video") => {
       try {
         const videoConstraint = {
-          width: 740,
-          height: 416,
+          width: { min: 640, ideal: 740, max: 1920 },
+          height: { min: 360, ideal: 416, max: 1080 },
           ...(selectedMediaDevices.video && {
             deviceId: selectedMediaDevices.video,
           }),
@@ -272,8 +312,10 @@ function MeetingSetup({ onJoin }: Props) {
       } catch (error) {
         console.log("startDevice", error);
         localStreamRef.current = emptyMediaTrack;
-        videoRef.current.srcObject = null;
-        videoRef.current.muted = true;
+        if (videoRef.current) {
+          videoRef.current.srcObject = null;
+          videoRef.current.muted = true;
+        }
         setMeetingRoomPermissions({
           camera: false,
           microphone: false,
@@ -305,34 +347,63 @@ function MeetingSetup({ onJoin }: Props) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      const screenShot = webcam.getScreenshot({
+      const screenshot = webcam.getScreenshot({
         width: video.videoWidth,
         height: video.videoHeight,
       });
 
-      getFullFaceDescription(screenShot, FACE_DESCRIPTION_MAX_RESULTS)
+      getFullFaceDescription(screenshot, FACE_DESCRIPTION_MAX_RESULTS)
         .then((data) => {
           setImgFullDesc(data);
         })
         .catch((e) => console.log("getFullFaceDescription", e));
       canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
       const ctx = canvas.getContext("2d");
-      drawFaceRect(imgFullDesc, ctx);
+      drawRectAndLabelFace(imgFullDesc, faceMatcher, ctx);
 
       if (imgFullDesc?.length > 0) {
-        imgFullDesc.map((desc) => {
+        imgFullDesc.forEach(async (desc) => {
           const bestMatch = faceMatcher?.findBestMatch(desc.descriptor);
-          console.log(bestMatch);
+          if ((bestMatch as any)._label !== "unknown") {
+            setStopDetection(true);
+            const now = new Date();
+            const file = dataURLtoFile(
+              screenshot,
+              `${now.getTime()}${now.getFullYear()}${now.getMonth()}${now.getDate()}${now.getMilliseconds()}${
+                me.user_id
+              }.jpg`,
+            );
+
+            const { metadata } = await firebase.uploadFileToStorage(
+              file,
+              `${room_id}/meetings/${meeting_id}`,
+            );
+
+            await mutateAsync({
+              room_id,
+              meeting_id,
+              user_id: me.user_id,
+              preview_image: metadata.fullPath,
+            });
+            setMessages([
+              ...messages,
+              {
+                id: Date.now(),
+                message: "Your attendance have been recorded.",
+                severity: Severities.SUCCESS,
+              },
+            ]);
+          }
         });
       }
     }
-  }, [modelLoaded, imgFullDesc]);
+  }, [modelLoaded, imgFullDesc, faceMatcher, participants]);
 
   const changeCameraDevice = useCallback(async () => {
     try {
       const videoConstraint = {
-        width: 740,
-        height: 416,
+        width: { min: 640, ideal: 740, max: 1920 },
+        height: { min: 360, ideal: 416, max: 1080 },
         deviceId: selectedMediaDevices.video,
       };
 
@@ -371,26 +442,35 @@ function MeetingSetup({ onJoin }: Props) {
     }
   }
 
+  const stopCamera = async () => {
+    localStreamRef.current &&
+      localStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
+  };
+
   useEffect(() => {
     async function matcher() {
-      if (roomFaces) {
-        const roomFacesList = await createMatcher(
-          roomFaces,
-          MATCHING_THRESHOLD,
-        );
+      if (faces) {
+        const roomFacesList = await createMatcher(faces, MATCHING_THRESHOLD);
         setFaceMatcher(roomFacesList);
       }
     }
-    if (roomFaces) {
+    if (faces) {
       matcher();
     }
-  }, [roomFaces]);
+  }, [faces]);
 
   useEffect(() => {
     let interval;
-    interval = setInterval(capture, DRAW_TIME_INTERVAL);
+    if (!stopDetection) {
+      interval = setInterval(capture, DRAW_TIME_INTERVAL);
+    } else {
+      setStopDetection(true);
+      clearInterval(interval);
+    }
     return () => clearInterval(interval);
-  }, [capture]);
+  }, [capture, stopDetection]);
 
   useEffect(() => {
     if (videoDevices) {
@@ -411,9 +491,40 @@ function MeetingSetup({ onJoin }: Props) {
   }, []);
 
   useEffect(() => {
-    initModels();
     startDevice("both");
+
+    return () => {
+      stopCamera();
+    };
   }, []);
+
+  useEffect(() => {
+    console.log(participantMeetingAttendance);
+    if (!isAttendanceExpired && !participantMeetingAttendance) {
+      initModels();
+    } else {
+      setStopDetection(true);
+    }
+  }, [isAttendanceExpired, participantMeetingAttendance]);
+
+  useEffect(() => {
+    let interval;
+    if (meetingInfo) {
+      interval = setInterval(() => {
+        setStrAttendanceDuration(
+          formatTimeDurationToReadableFormat({
+            start: new Date(),
+            end: new Date(meetingInfo.attendance_finish_at),
+            format: ["days", "hours", "minutes", "seconds"],
+          }),
+        );
+        setIsAttendanceExpired(
+          new Date() >= new Date(meetingInfo.attendance_finish_at),
+        );
+      }, 1e3);
+    }
+    return () => clearInterval(interval);
+  }, [meetingInfo]);
 
   useEffect(() => {
     if (
@@ -432,6 +543,22 @@ function MeetingSetup({ onJoin }: Props) {
   return (
     <div className={styled.root}>
       <div className="col">
+        <div className="attendance-warning">
+          {!isAttendanceExpired ? (
+            <p>
+              Attendance will expire in{" "}
+              <b>
+                {strAttendanceDuration !== ""
+                  ? strAttendanceDuration
+                  : "xx hour(s) xx minute(s) xx second(s)"}
+              </b>
+            </p>
+          ) : (
+            <p>
+              Attendance is <b>expired</b>.
+            </p>
+          )}
+        </div>
         <div className="video-wrapper">
           <Webcam
             audioConstraints={meetingRoomPermissions.microphone}
@@ -440,8 +567,8 @@ function MeetingSetup({ onJoin }: Props) {
               meetingRoomPermissions.camera
                 ? {
                     deviceId: selectedMediaDevices.video,
-                    width: 740,
-                    height: 416,
+                    width: { min: 640, ideal: 740, max: 1920 },
+                    height: { min: 360, ideal: 416, max: 1080 },
                   }
                 : false
             }
@@ -450,44 +577,47 @@ function MeetingSetup({ onJoin }: Props) {
               webcamRef.current = e;
             }}
           />
-          <canvas ref={canvasRef} id="video-canvas" />
-          {(!modelLoaded || (imgFullDesc && imgFullDesc.length < 1)) && (
+          {!stopDetection && <canvas ref={canvasRef} id="video-canvas" />}
+          {(!modelLoaded ||
+            (!stopDetection && imgFullDesc && imgFullDesc.length < 1)) && (
             <div className="loading-wrapper">
               <CircularProgress />
             </div>
           )}
-          <div className="video-action-wrapper">
-            <div className="center">
-              <div
-                role="button"
-                className={cx("btn-media", {
-                  disabled: !meetingRoomPermissions.camera,
-                })}
-                onClick={() => onClick("video")}
-              >
-                <img
-                  src={meetingRoomPermissions?.camera ? VideoSVG : NoVideoSVG}
-                  alt=""
-                />
-              </div>
-              <div
-                role="button"
-                className={cx("btn-media", {
-                  disabled: !meetingRoomPermissions.microphone,
-                })}
-                onClick={() => onClick("audio")}
-              >
-                <img
-                  src={
-                    meetingRoomPermissions?.microphone
-                      ? MicrophoneSVG
-                      : NoMicrophoneSVG
-                  }
-                  alt=""
-                />
+          {stopDetection && (
+            <div className="video-action-wrapper">
+              <div className="center">
+                <div
+                  role="button"
+                  className={cx("btn-media", {
+                    disabled: !meetingRoomPermissions.camera,
+                  })}
+                  onClick={() => onClick("video")}
+                >
+                  <img
+                    src={meetingRoomPermissions?.camera ? VideoSVG : NoVideoSVG}
+                    alt=""
+                  />
+                </div>
+                <div
+                  role="button"
+                  className={cx("btn-media", {
+                    disabled: !meetingRoomPermissions.microphone,
+                  })}
+                  onClick={() => onClick("audio")}
+                >
+                  <img
+                    src={
+                      meetingRoomPermissions?.microphone
+                        ? MicrophoneSVG
+                        : NoMicrophoneSVG
+                    }
+                    alt=""
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
         <select
           value={selectedMediaDevices.video}
@@ -505,12 +635,14 @@ function MeetingSetup({ onJoin }: Props) {
           ))}
         </select>
       </div>
-      <div className="col">
-        <h3 className="title">Ready To Join?</h3>
-        <button className="btn btn-join btn-primary" onClick={onJoin}>
-          Join Now
-        </button>
-      </div>
+      {stopDetection && (
+        <div className="col">
+          <h3 className="title">Ready To Join?</h3>
+          <button className="btn btn-join btn-primary" onClick={onJoin}>
+            Join Now
+          </button>
+        </div>
+      )}
     </div>
   );
 }

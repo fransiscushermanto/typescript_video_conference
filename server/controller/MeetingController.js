@@ -2,15 +2,19 @@ const utils = require("../utils/Utils");
 
 module.exports = {
   createMeeting: async (req, res, next) => {
-    const { room_id, meeting_name, user_id } = req.body;
+    const { meeting_name, user_id, attendance_start_at, attendance_finish_at } =
+      req.body;
+    const { room_id } = req.params;
 
     try {
-      const meeting_id = await utils.createMeeting(
+      const data = await utils.createMeeting(
         room_id,
         user_id,
         meeting_name,
+        attendance_start_at,
+        attendance_finish_at,
       );
-      return res.status(200).send({ meeting_id });
+      return res.status(200).send(data);
     } catch (error) {
       return res.status(500).send({ message: "Internal Server Error", error });
     }
@@ -19,14 +23,21 @@ module.exports = {
     const { room_id } = req.params;
     const { meeting_id } = req.body;
     try {
-      if (
-        meeting_id &&
-        room_id &&
-        (await utils.checkMeeting(room_id, meeting_id))
-      ) {
+      const { notFound, notStarted } = await utils.checkMeeting(
+        room_id,
+        meeting_id,
+      );
+
+      if (notStarted)
+        return res.status(400).send({ message: "Meeting hasn't started yet" });
+
+      if (notFound) {
+        return res.status(404).send({ message: "Meeting Not Found" });
+      }
+
+      if (meeting_id && room_id && !notFound && !notStarted) {
         return res.status(200).send();
       }
-      return res.status(404).send({ message: "Meeting Not Found" });
     } catch (error) {
       return res.status(500).send({ message: "Internal Server Error", error });
     }
@@ -56,11 +67,40 @@ module.exports = {
       const meeting_info = await utils.getRoomMeeting(room_id, meeting_id);
 
       if (meeting_info) {
-        meeting_info.created_at = meeting_info.created_at.toDate();
         meeting_info.created_by = await utils.getUser(meeting_info.created_by);
       }
 
       return res.status(200).send({ meeting_info });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
+  },
+  getParticipantMeetingAttendance: async (req, res, next) => {
+    const { room_id, meeting_id, user_id } = req.params;
+    try {
+      const participant_attendance =
+        await utils.getParticipantMeetingAttendance(
+          room_id,
+          meeting_id,
+          user_id,
+        );
+      return res.status(200).send({ participant_attendance });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
+  },
+  storeParticipantMeetingAttendance: async (req, res, next) => {
+    console.log(req.file);
+    const { room_id, meeting_id } = req.params;
+    const { user_id, preview_image } = req.body;
+    try {
+      await utils.storeRoomMeetingUserAttendance(
+        room_id,
+        meeting_id,
+        user_id,
+        preview_image,
+      );
+      return res.status(200).send();
     } catch (error) {
       return res.status(500).send({ message: "Internal Server Error", error });
     }

@@ -48,6 +48,7 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
       const data = {
         user_id: res.uid,
         user_name: res.displayName,
+        user_email: res.email,
       };
       socket.connect();
       socket.emit("LIST_USER_SOCKET", { me: data });
@@ -63,6 +64,7 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
           ...me,
           user_id: user.uid,
           user_name: user.displayName,
+          user_email: user.email,
         };
         setMe(data);
         socket.emit("LIST_USER_SOCKET", { me: data });

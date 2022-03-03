@@ -92,6 +92,7 @@ const getRoomParticipants = async (user_id, room_id) => {
     return {
       ...participant,
       user_name: userData.displayName,
+      user_email: userData.email,
     };
   });
 
@@ -137,8 +138,20 @@ async function deleteRoom(room_id, user_id) {
   return res;
 }
 
-async function createMeeting(room_id, user_id, meeting_name) {
-  return await admin.createMeeting(room_id, user_id, meeting_name);
+async function createMeeting(
+  room_id,
+  user_id,
+  meeting_name,
+  attendance_start_at,
+  attendance_finish_at,
+) {
+  return await admin.createMeeting(
+    room_id,
+    user_id,
+    meeting_name,
+    attendance_start_at,
+    attendance_finish_at,
+  );
 }
 
 async function deleteMeeting(room_id, meeting_id) {
@@ -198,6 +211,28 @@ async function getRoomFaces(room_id) {
   }
 }
 
+async function storeRoomMeetingUserAttendance(
+  room_id,
+  meeting_id,
+  user_id,
+  preview_image,
+) {
+  return await admin.storeRoomMeetingUserAttendance(
+    room_id,
+    meeting_id,
+    user_id,
+    preview_image,
+  );
+}
+
+async function getParticipantMeetingAttendance(room_id, meeting_id, user_id) {
+  return await admin.getParticipantMeetingAttendance(
+    room_id,
+    meeting_id,
+    user_id,
+  );
+}
+
 module.exports = {
   getUser,
   createRoom,
@@ -219,4 +254,6 @@ module.exports = {
   storeRoomUserFace,
   getRoomUserFaces,
   getRoomFaces,
+  storeRoomMeetingUserAttendance,
+  getParticipantMeetingAttendance,
 };

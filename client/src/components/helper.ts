@@ -1,3 +1,4 @@
+import { format, formatDuration, intervalToDuration } from "date-fns";
 import Icon from "../assets/logo.svg";
 
 export function detectOnBlur(ref, state, setState) {
@@ -212,3 +213,87 @@ export function range(n: number) {
 }
 
 export const b64toBlob = (base64) => fetch(base64).then((res) => res.blob());
+
+const formatDistanceLocale = (token: DurationToken, count) => {
+  switch (token) {
+    case "lessThanXSeconds":
+    case "xSeconds":
+      return `${count} second(s)`;
+    case "halfAMinute":
+    case "lessThanXMinutes":
+    case "xMinutes":
+      return `${count} minute(s)`;
+    case "aboutXHours":
+    case "xHours":
+      return `${count} hour(s)`;
+    case "xDays":
+      return `${count} day(s)`;
+  }
+};
+
+type DurationToken =
+  | "lessThanXSeconds"
+  | "xSeconds"
+  | "halfAMinute"
+  | "lessThanXMinutes"
+  | "xMinutes"
+  | "aboutXHours"
+  | "xHours"
+  | "xDays";
+
+function customFormatDistance(token: DurationToken, count, options: any = {}) {
+  const result = formatDistanceLocale(token, count);
+  return result;
+}
+
+export function formatTimeDurationToReadableFormat({
+  start = 0,
+  end = 0,
+  format,
+  delimiter,
+}: {
+  start?: number | Date;
+  end?: number | Date;
+  format: ("hours" | "minutes" | "days" | "seconds")[];
+  delimiter?: string;
+}) {
+  return formatDuration(
+    intervalToDuration({
+      start,
+      end,
+    }),
+    {
+      format,
+      delimiter,
+      locale: {
+        code: window.document.documentElement.lang,
+        formatDistance: (token: DurationToken, count, options) =>
+          customFormatDistance(token, count, { ...options }),
+      },
+    },
+  );
+}
+
+export function dataURLtoFile(dataurl, filename) {
+  var arr = dataurl.split(","),
+    mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]),
+    n = bstr.length,
+    u8arr = new Uint8Array(n);
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  return new File([u8arr], filename, { type: mime });
+}
+
+export function addToFormData(object: { [key: string]: any }) {
+  const formData = new FormData();
+
+  Object.entries(object).forEach(([key, value]) => {
+    formData.append(key, value);
+  });
+
+  return formData;
+}

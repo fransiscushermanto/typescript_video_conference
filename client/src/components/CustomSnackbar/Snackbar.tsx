@@ -1,12 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Alert as MuiAlert } from "@material-ui/lab";
 import styled from "styled-components";
-import { OptionsObject, Severities } from "./types";
+import { Severities, SnackbarItem } from "./types";
 import { useSnackbar } from "./SnackbarProvider";
 
-interface Props extends OptionsObject {
-  message: string;
-}
+interface Props extends SnackbarItem {}
 
 const Wrapper = styled.div`
   padding: 6px 16px;

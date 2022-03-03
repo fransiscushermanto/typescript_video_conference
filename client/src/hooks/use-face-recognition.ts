@@ -1,6 +1,7 @@
 import * as faceapi from "face-api.js";
 import { useState } from "react";
-import { RoomFacesModel } from "../components/api-hooks/type";
+import { useMe } from ".";
+import { RoomParticipantFaceModel } from "../components/api-hooks/type";
 
 export default function useFaceRecognition() {
   const [isLoadingFaceDetector, setIsLoadingFaceDetector] =
@@ -9,6 +10,8 @@ export default function useFaceRecognition() {
     useState<boolean>(true);
   const [isFeatureExtractorLoading, setIsFeatureExtractorLoading] =
     useState<boolean>(true);
+
+  const [me] = useMe();
 
   async function initModels() {
     const MODEL_URL = window.location.origin + "/models";
@@ -104,22 +107,62 @@ export default function useFaceRecognition() {
     }
   }
 
+  function drawRectAndLabelFace(descriptions, faceDB, ctx) {
+    // Loop through each desc
+    descriptions &&
+      descriptions.forEach((desc) => {
+        // Extract boxes and classes
+        const { x, y, width, height } = desc.detection.box;
+        const landmarksPoint = desc.landmarks._positions;
+
+        const bestMatch = faceDB.findBestMatch(desc.descriptor);
+        let label: string = "";
+        // Set styling
+        if (bestMatch._label !== "unknown") {
+          label = `Approved`;
+        } else if (bestMatch._label === "unknown") {
+          label = `Not ${me.user_name}`;
+        }
+
+        ctx.font = "normal 18px Gotham, Helvetica Neue, sans-serif";
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = bestMatch._label === "unknown" ? "#E00" : "#0E0";
+
+        //draw 68 points
+        landmarksPoint.forEach((point) => {
+          ctx.beginPath();
+          ctx.fillStyle = bestMatch._label === "unknown" ? "#E00" : "#0E0";
+          ctx.arc(point._x, point._y, 3, 0, 2 * Math.PI);
+          ctx.closePath();
+
+          ctx.fill();
+        });
+
+        // Draw rectangles and text
+        ctx.beginPath();
+        ctx.fillStyle = bestMatch._label === "unknown" ? "#E00" : "#0E0";
+        ctx.rect(x, y, width, height);
+
+        ctx.fillText(label, x, y + height + 20);
+        ctx.fillText(`L2: ${bestMatch.distance.toFixed(2)}`, x, y);
+
+        ctx.stroke();
+      });
+  }
+
   async function createMatcher(
-    roomFaces: RoomFacesModel[],
+    faces: RoomParticipantFaceModel[],
     maxDescriptorDistance,
   ) {
     // Create labeled descriptors of member from profile
-    let labeledDescriptors = roomFaces.map(
-      (roomFace) =>
-        new faceapi.LabeledFaceDescriptors(
-          roomFace.user_id,
-          roomFace.faces.map(
-            (face) =>
-              new Float32Array(
-                face.face_description.match(/-?\d+(?:\.\d+)?/g).map(Number),
-              ),
+    let labeledDescriptors = new faceapi.LabeledFaceDescriptors(
+      me.user_id,
+      faces.map(
+        (face) =>
+          new Float32Array(
+            face.face_description.match(/-?\d+(?:\.\d+)?/g).map(Number),
           ),
-        ),
+      ),
     );
 
     /**
@@ -142,6 +185,7 @@ export default function useFaceRecognition() {
     isFeatureExtractorLoading,
     getFullFaceDescription,
     drawFaceRect,
+    drawRectAndLabelFace,
     createMatcher,
   };
 }

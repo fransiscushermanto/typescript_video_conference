@@ -224,6 +224,18 @@ export default css`
     }
   }
 
+  .checkbox-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    > *:not(:last-child) {
+      margin-right: 0.25rem;
+    }
+    .checkbox-label {
+      font-size: 0.75rem;
+    }
+  }
+
   video {
     background-color: black;
   }

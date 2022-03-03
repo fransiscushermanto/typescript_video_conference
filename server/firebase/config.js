@@ -25,6 +25,7 @@ var config = {
       process.env.firebase_admin_auth_provider_x509_cert_url,
     client_x509_cert_url: process.env.firebase_admin_client_x509_cert_url,
   }),
+  storageBucket: process.env.BUCKET_NAME,
 };
 
 class FirebaseAdmin {
@@ -82,11 +83,10 @@ class FirebaseAdmin {
       .get();
     const meetings = await Promise.all(
       res.docs.map(async (meeting) => {
-        const { created_by, created_at, ...resData } = meeting.data();
+        const { created_by, ...resData } = meeting.data();
         return {
           meeting_id: meeting.id,
           created_by: await this.getUser(created_by),
-          created_at: created_at.toDate(),
           ...resData,
         };
       }),
@@ -494,25 +494,41 @@ class FirebaseAdmin {
     });
   }
 
-  async createMeeting(room_id, user_id, meeting_name) {
-    const meetingID = uuid.v4();
-    await new Promise(async (resolve) => {
-      const roomMeetingsDoc = this.firestore
-        .collection(collections.rooms)
-        .doc(room_id)
-        .collection(collections.room_meetings);
-      const created_at = new Date();
-      const created_by = user_id;
+  async createMeeting(
+    room_id,
+    user_id,
+    meeting_name,
+    attendance_start_at,
+    attendance_finish_at,
+  ) {
+    try {
+      let data;
+      const meetingID = uuid.v4();
+      await new Promise(async (resolve) => {
+        const roomMeetingsDoc = this.firestore
+          .collection(collections.rooms)
+          .doc(room_id)
+          .collection(collections.room_meetings);
+        const created_at = new Date().toString();
+        const created_by = user_id;
+        data = {
+          created_by,
+          meeting_name,
+          created_at,
+          attendance_start_at,
+          attendance_finish_at,
+        };
 
-      roomMeetingsDoc.doc(meetingID).set({
-        created_by,
-        meeting_name,
-        created_at,
+        roomMeetingsDoc.doc(meetingID).set(data);
+
+        resolve(true);
       });
-
-      resolve(true);
-    });
-    return meetingID;
+      data.meeting_id = meetingID;
+      return data;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   async deleteMeeting(room_id, meeting_id) {
@@ -525,8 +541,26 @@ class FirebaseAdmin {
   }
 
   async checkMeeting(room_id, meeting_id) {
-    const meeting = await this.getRoomMeeting(room_id, meeting_id);
-    return !!meeting;
+    try {
+      const meeting = await this.getRoomMeeting(room_id, meeting_id);
+
+      if (!meeting) {
+        return {
+          notFound: true,
+          notStarted: false,
+        };
+      }
+
+      const now = new Date();
+      const startTime = new Date(meeting.attendance_start_at);
+
+      return {
+        notFound: !meeting,
+        notStarted: now < startTime,
+      };
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async getRoomUserFaces(room_id, user_id) {
@@ -562,7 +596,6 @@ class FirebaseAdmin {
             ([face_id, payload]) => ({
               face_id,
               ...payload,
-              created_at: payload.created_at?.toDate?.(),
             }),
           );
 
@@ -585,7 +618,7 @@ class FirebaseAdmin {
       const payload = {
         face_description,
         preview_image,
-        created_at: new Date(),
+        created_at: new Date().toString(),
       };
 
       const docFaces = await this.firestore
@@ -603,6 +636,69 @@ class FirebaseAdmin {
         });
       }
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async getRoomMeetingAttendances(room_id, meeting_id) {
+    try {
+      const res = await this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .collection(collections.room_meetings)
+        .doc(meeting_id)
+        .collection(collections.room_meeting_attendances)
+        .get();
+
+      return res.docs.map((doc) => ({ ...doc.data(), user_id: doc.id }));
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async getParticipantMeetingAttendance(room_id, meeting_id, user_id) {
+    try {
+      const attendances = await this.getRoomMeetingAttendances(
+        room_id,
+        meeting_id,
+      );
+      return attendances.find((attendance) => attendance.user_id === user_id);
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async storeRoomMeetingUserAttendance(
+    room_id,
+    meeting_id,
+    user_id,
+    preview_image,
+  ) {
+    try {
+      const checked_in_time = new Date().toString();
+
+      const attendances = await this.getRoomMeetingAttendances(
+        room_id,
+        meeting_id,
+      );
+
+      console.log("attendance", attendances);
+
+      await this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .collection(collections.room_meetings)
+        .doc(meeting_id)
+        .collection(collections.room_meeting_attendances)
+        .doc(user_id)
+        .set({
+          preview_image,
+          checked_in_time,
+        });
+    } catch (error) {
+      console.log(error);
       throw error;
     }
   }

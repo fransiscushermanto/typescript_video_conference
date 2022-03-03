@@ -7,6 +7,12 @@ export const menus = [
     sidebar: true,
   },
   {
+    name: "attendances",
+    label: "Attendances",
+    sidebar: true,
+    role: [ParticipantType.HOST, ParticipantType.CO_HOST],
+  },
+  {
     name: "participants",
     label: "Pariticipants",
     sidebar: true,
@@ -21,6 +27,7 @@ export const menus = [
     name: "meeting",
     sidebar: false,
   },
+
   // {
   //   name: "settings",
   //   label: "Settings",

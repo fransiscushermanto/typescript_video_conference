@@ -54,6 +54,7 @@ enum ParticipantType {
 export interface Participant {
   user_id?: string;
   user_name?: string;
+  user_email?: string;
   socket_id?: string;
   role?: ParticipantType | string;
 }
@@ -155,12 +156,6 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
           deviceId: selectedMediaDevices.video,
         }),
       };
-
-      console.log(
-        video,
-        meetingRoomPermission.camera,
-        meetingRoomPermission.microphone,
-      );
       const localStream = await navigator.mediaDevices.getUserMedia({
         audio: meetingRoomPermission.microphone,
         video,
@@ -265,6 +260,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
               .concat({
                 user_id: participant.user_id,
                 user_name: participant.user_name,
+                user_email: participant.user_email,
                 stream: e.streams[0],
               }),
           );

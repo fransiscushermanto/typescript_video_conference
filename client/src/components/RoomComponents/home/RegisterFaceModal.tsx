@@ -14,9 +14,10 @@ import {
   useMediaDevices,
   useMe,
   useSocket,
+  useFirebase,
 } from "../../../hooks";
 import { useGetRoomParticipantFaces, useStoreFace } from "../../api-hooks";
-import { b64toBlob, range } from "../../helper";
+import { b64toBlob, dataURLtoFile, range } from "../../helper";
 import {
   DRAW_TIME_INTERVAL,
   FACE_DESCRIPTION_MAX_RESULTS,
@@ -180,6 +181,7 @@ const icons = {
 };
 
 function RegisterFaceModal({ onClose }: Props) {
+  const firebase = useFirebase();
   const [me] = useMe();
   const { room_id } = useParams<{ room_id }>();
   const socket = useSocket();
@@ -299,16 +301,26 @@ function RegisterFaceModal({ onClose }: Props) {
   }, [modelLoaded, imgFullDesc]);
 
   const onSave = useCallback(async () => {
-    const blob = await b64toBlob(imgPreview);
-    const url = window.URL.createObjectURL(blob);
+    const now = new Date();
+    const file = dataURLtoFile(
+      imgPreview,
+      `${now.getTime()}${now.getFullYear()}${now.getMonth()}${now.getDate()}${now.getMilliseconds()}${
+        me.user_id
+      }.jpg`,
+    );
+
+    const { metadata } = await firebase.uploadFileToStorage(
+      file,
+      `${room_id}/faces/${me.user_id}`,
+    );
 
     mutate({
       room_id,
       user_id: me.user_id,
       face_description: imgFaceDescriptor.toString(),
-      preview_image: url,
+      preview_image: metadata.fullPath,
     });
-  }, [imgFaceDescriptor, imgPreview, me.user_id, mutate, room_id]);
+  }, [firebase, imgFaceDescriptor, imgPreview, me.user_id, mutate, room_id]);
 
   useEffect(() => {
     setLocalSavedImage(savedImage);
@@ -417,7 +429,7 @@ function RegisterFaceModal({ onClose }: Props) {
                 (imgFaceDescriptor && imgFaceDescriptor.length !== 128) ||
                 isLoadingStoreFace ||
                 isGetParticipantFaceLoading ||
-                localSavedImage?.length === MAX_FACES
+                localSavedImage?.length >= MAX_FACES
               }
             >
               Save
@@ -440,7 +452,7 @@ function RegisterFaceModal({ onClose }: Props) {
               }
 
               return (
-                <li className="image-info">
+                <li key={i} className="image-info">
                   <span className="icon">{icons[handleIcon()]}</span>
                   <span>Image {currentIndex}</span>
                 </li>

@@ -15,6 +15,7 @@ import {
   UserInWaitingRoomModel,
   RoomParticipantFaceModel,
   RoomFacesModel,
+  ParticipantMeetingAttendanceModel,
 } from "./type";
 
 interface Participant {
@@ -348,7 +349,7 @@ export function useGetRoomParticipantFaces(
   );
 }
 
-export function useGetRoomFaces(
+export function useGetRoomParticipantsFaces(
   options: UseQueryOptions<RoomFacesModel[], any> = {},
 ) {
   const { room_id } = useParams<{ room_id }>();
@@ -358,6 +359,35 @@ export function useGetRoomFaces(
     async () => {
       const res = await axios.get(`/rooms/${room_id}/faces`);
       return res.data.room_faces;
+    },
+    {
+      ...options,
+      enabled: options.enabled || false,
+      refetchOnWindowFocus: options.refetchOnWindowFocus || false,
+    },
+  );
+}
+
+export function useGetParticipantMeetingAttendance(
+  options: UseQueryOptions<ParticipantMeetingAttendanceModel, any> = {},
+) {
+  const firebase = useFirebase();
+  const [me] = useMe();
+  const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
+  return useQuery<ParticipantMeetingAttendanceModel, any>(
+    "participant-meeting-attendance",
+    async () => {
+      const res = await axios.get(
+        `/meetings/${room_id}/${meeting_id}/attendance/${me.user_id}`,
+      );
+
+      const url = await firebase.getFileFromStorage(
+        res.data.participant_attendance.preview_image,
+      );
+
+      res.data.participant_attendance.preview_image = url;
+
+      return res.data.participant_attendance;
     },
     {
       ...options,

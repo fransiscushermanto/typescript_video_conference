@@ -1,7 +1,6 @@
 /* eslint-disable import/no-anonymous-default-export */
 import React, { memo, useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import axios from "../../axios-instance";
+import { useHistory, useParams } from "react-router-dom";
 import { RouteComponentProps, useRouteMatch } from "react-router-dom";
 import * as H from "history";
 import NotFound from "../NotFound";
@@ -9,6 +8,7 @@ import { MessageContext } from "../Providers/MessageProvider";
 import { useGetRole, useMe, useRoomSocket, useSocket } from "../../hooks";
 import { useCheckRoomMeeting, useGetRooms } from "../api-hooks";
 import { menus } from "../RoomComponents/constants";
+import { Severities } from "../CustomSnackbar";
 
 interface Props extends RouteComponentProps {
   history: H.History<H.LocationState>;
@@ -19,28 +19,49 @@ export default (OriginalComponent) => {
     const myRole = useGetRole();
     const { room_id, menu, meeting_id } =
       useParams<{ room_id; menu; meeting_id }>();
+    const { url, path } = useRouteMatch();
+    const history = useHistory();
     const roomSocket = useRoomSocket();
     const [me] = useMe();
     const [isReady, setIsReady] = useState<boolean>(false);
     const [error, setError] = useState<boolean>(false);
+    const [messages, setMessages] = useContext(MessageContext);
 
     const { mutate: checkRoomMeeting } = useCheckRoomMeeting({
-      onError: () => {
-        setError(true);
-        setIsReady(true);
+      onError: (e) => {
+        const { status, data } = e.response;
+        if (status === 400) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              message: data.message,
+              severity: Severities.WARNING,
+            },
+          ]);
+          const formattedUrl = url.split(`/meeting/${meeting_id}`)[0];
+          return history.push(formattedUrl);
+        }
+
+        if (status === 404) {
+          setError(true);
+          setIsReady(true);
+        }
       },
     });
 
     useEffect(() => {
-      switch (menu) {
-        case "meeting":
-          checkRoomMeeting({ room_id, meeting_id });
-          setIsReady(true);
-          break;
+      if (roomSocket) {
+        switch (menu) {
+          case "meeting":
+            checkRoomMeeting({ room_id, meeting_id });
+            setIsReady(true);
+            break;
 
-        default:
-          setIsReady(true);
-          break;
+          default:
+            setIsReady(true);
+            break;
+        }
       }
     }, [roomSocket]);
 

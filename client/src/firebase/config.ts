@@ -1,6 +1,6 @@
 import * as firebase from "firebase/app";
 import Cookies from "js-cookie";
-import "firebase/storage";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import {
   getFirestore,
   addDoc,
@@ -92,6 +92,19 @@ class Firebase {
       ),
       observer,
     );
+  }
+
+  async uploadFileToStorage(file: File, path: string) {
+    const storage = getStorage();
+
+    const fullPathFileRef = ref(storage, `${path}/${file.name}`);
+    return await uploadBytes(fullPathFileRef, file);
+  }
+
+  async getFileFromStorage(path) {
+    const storage = getStorage();
+
+    return await getDownloadURL(ref(storage, path));
   }
 
   async getRoom(room_id: string) {

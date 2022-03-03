@@ -17,6 +17,7 @@ export enum ParticipantType {
 export interface UserModel {
   user_id?: string;
   user_name?: string;
+  user_email?: string;
   socket_id?: string;
   peer_id?: string;
 }
@@ -48,10 +49,11 @@ export interface PeerOfferModel {
 
 export interface RoomMeetingModel {
   meeting_id: string;
-  offer: PeerOfferModel;
   meeting_name: string;
   created_by: User;
   created_at: Date;
+  attendance_start_at: Date;
+  attendance_finish_at: Date;
 }
 
 export interface RoomParticipantFaceModel {
@@ -64,6 +66,12 @@ export interface RoomParticipantFaceModel {
 export interface RoomFacesModel {
   faces: RoomParticipantFaceModel[];
   user_id: string;
+}
+
+export interface ParticipantMeetingAttendanceModel {
+  checked_in_at: Date;
+  user_id: string;
+  preview_image: string;
 }
 
 export interface RoomNotificationModel {

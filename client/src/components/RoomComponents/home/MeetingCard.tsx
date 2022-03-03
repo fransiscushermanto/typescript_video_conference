@@ -2,20 +2,21 @@ import { css } from "@emotion/css";
 import * as Popover from "@radix-ui/react-popover";
 import KebabMenuSVG from "../../../assets/kebab-menu.svg";
 import UsersSVG from "../../../assets/users.svg";
-import React from "react";
-import { useGetRole, useRoomSocket } from "../../../hooks";
-import { ParticipantType } from "../../api-hooks/type";
+import React, { useEffect, useState } from "react";
+import { useGetRole, useInterval, useRoomSocket } from "../../../hooks";
+import { ParticipantType, RoomMeetingModel } from "../../api-hooks/type";
 import { User } from "firebase/auth";
 import { format } from "date-fns";
 import { useDeleteRoomMeeting } from "../../api-hooks";
 import { useHistory, useParams, useRouteMatch } from "react-router-dom";
-import { intToRGB, hashCode, getInitialFromString } from "../../helper";
+import {
+  intToRGB,
+  hashCode,
+  getInitialFromString,
+  formatTimeDurationToReadableFormat,
+} from "../../helper";
 
-interface IProps {
-  meeting_id: string;
-  meeting_name: string;
-  created_by: User;
-  created_at: Date;
+interface IProps extends RoomMeetingModel {
   active_participants?: number;
 }
 
@@ -159,12 +160,25 @@ function MeetingCard({
   meeting_name,
   created_at,
   active_participants,
+  attendance_start_at,
 }: IProps) {
   const myRole = useGetRole();
   const { url } = useRouteMatch();
   const { room_id } = useParams<{ room_id }>();
+  const { setInterval, clearInterval } = useInterval();
   const { mutate: mutateDeleteRoomMeeting } = useDeleteRoomMeeting();
+  const [isJoinable, setIsJoinable] = useState(
+    new Date(attendance_start_at) <= new Date(),
+  );
+  const [durationText, setDurationText] = useState(
+    formatTimeDurationToReadableFormat({
+      start: new Date(),
+      end: new Date(attendance_start_at),
+      format: ["days", "hours", "minutes", "seconds"],
+    }),
+  );
   const roomSocket = useRoomSocket();
+
   const initials = React.useMemo(
     () => getInitialFromString(created_by.displayName),
     [],
@@ -196,6 +210,28 @@ function MeetingCard({
     window.location.href = `${url}/meeting/${meeting_id}`;
   }
 
+  useEffect(() => {
+    if (!isJoinable) {
+      setInterval(() => {
+        const result = new Date(attendance_start_at) <= new Date();
+        setDurationText(
+          formatTimeDurationToReadableFormat({
+            start: new Date(),
+            end: new Date(attendance_start_at),
+            format: ["days", "hours", "minutes", "seconds"],
+          }),
+        );
+        setIsJoinable(result);
+      }, 1e3);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isJoinable) {
+      clearInterval();
+    }
+  }, [isJoinable]);
+
   return (
     <div className={styled.root}>
       <div className={styled.profile(intToRGB(hashCode(created_by.uid)))}>
@@ -222,9 +258,14 @@ function MeetingCard({
               <img src={UsersSVG} alt="user" />
             </span>
           </div>
-          <div className="join-btn btn btn-success" onClick={onJoin}>
+          <button
+            disabled={!isJoinable}
+            className="join-btn btn btn-success"
+            onClick={onJoin}
+            title={!isJoinable ? `Meeting is opened in ${durationText}` : ""}
+          >
             Join
-          </div>
+          </button>
           <Popover.Root>
             <Popover.Trigger asChild>
               <button

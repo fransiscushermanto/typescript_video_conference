@@ -1,6 +1,5 @@
 import { useMutation, UseMutationOptions } from "react-query";
 import axios from "../../axios-instance";
-import { PeerOfferModel } from "./type";
 
 export function useCheckRoom(
   options: UseMutationOptions<any, any, { room_id }> = {},
@@ -101,7 +100,8 @@ export function useCreateRoomMeeting(
       user_id: string;
       room_id: string;
       meeting_name: string;
-      offer: PeerOfferModel;
+      attendance_start_at: string;
+      attendance_finish_at: string;
     }
   > = {},
 ) {
@@ -109,13 +109,14 @@ export function useCreateRoomMeeting(
     any,
     any,
     {
-      room_id: string;
       user_id: string;
+      room_id: string;
       meeting_name: string;
-      offer: PeerOfferModel;
+      attendance_start_at: string;
+      attendance_finish_at: string;
     }
-  >(async (payload) => {
-    const res = await axios.post("/meetings/create", payload);
+  >(async ({ room_id, ...payload }) => {
+    const res = await axios.post(`/meetings/${room_id}/create`, payload);
     return res.data;
   }, options);
 }
@@ -139,6 +140,8 @@ export function useDeleteRoomMeeting(
 export function useCheckRoomMeeting(
   options: UseMutationOptions<any, any, { room_id; meeting_id }> = {},
 ) {
+  const blackListStatusCode = [404, 400];
+
   return useMutation<any, any, { room_id; meeting_id }>(
     async ({ room_id, meeting_id }) => {
       const res = await axios.post(`/rooms/${room_id}/meetings/verify`, {
@@ -149,7 +152,10 @@ export function useCheckRoomMeeting(
     {
       retry: (failureCount, error) => {
         const { status } = error.response;
-        return failureCount < 2 && status !== 404;
+        return (
+          failureCount < 2 &&
+          !blackListStatusCode.some((code) => code === status)
+        );
       },
       ...options,
     },
@@ -172,6 +178,37 @@ export function useStoreFace(
       `/rooms/${room_id}/faces/${user_id}`,
       resParams,
     );
+    return res.data;
+  }, options);
+}
+
+export function useStoreParticipantAttendance(
+  options: UseMutationOptions<
+    any,
+    any,
+    {
+      room_id;
+      meeting_id;
+      preview_image;
+      user_id;
+    }
+  > = {},
+) {
+  return useMutation<
+    any,
+    any,
+    {
+      room_id;
+      meeting_id;
+      preview_image;
+      user_id;
+    }
+  >(async ({ room_id, meeting_id, ...payload }) => {
+    const res = await axios.post(
+      `/meetings/${room_id}/${meeting_id}/attendance`,
+      payload,
+    );
+
     return res.data;
   }, options);
 }
