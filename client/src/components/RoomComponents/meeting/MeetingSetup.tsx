@@ -499,7 +499,6 @@ function MeetingSetup({ onJoin }: Props) {
   }, []);
 
   useEffect(() => {
-    console.log(participantMeetingAttendance);
     if (!isAttendanceExpired && !participantMeetingAttendance) {
       initModels();
     } else {

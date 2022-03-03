@@ -385,7 +385,9 @@ export function useGetParticipantMeetingAttendance(
         res.data.participant_attendance.preview_image,
       );
 
-      res.data.participant_attendance.preview_image = url;
+      if (res.data.participant_attendance) {
+        res.data.participant_attendance.preview_image = url;
+      }
 
       return res.data.participant_attendance;
     },
