@@ -1,5 +1,5 @@
 import { css, cx } from "@emotion/css";
-import React from "react";
+import React, { useState } from "react";
 import { useHistory } from "react-router";
 import { ParticipantType, RoomStatus } from "../../api-hooks/type";
 import KebabMenuSVG from "../../../assets/kebab-menu.svg";
@@ -104,12 +104,14 @@ function RoomCard({ room }: IRoomCard) {
 
   const isHost = myRole === ParticipantType.HOST;
   const initials = React.useMemo(() => getInitialFromString(room_name), []);
+  const [isOpen, setIsOpen] = useState(false);
   const menus = React.useMemo(
     () => [
       {
         name: isHost ? "Delete" : "Leave",
         action: (e) => {
           e.stopPropagation();
+          setIsOpen(false);
           mutateDeleteRoom({ room_id, user_id: me.user_id });
         },
       },
@@ -129,9 +131,15 @@ function RoomCard({ room }: IRoomCard) {
       className={cx(styled.card, { disabled: status !== RoomStatus.ACCEPTED })}
       title={status === RoomStatus.PENDING ? status : ""}
     >
-      <Popover.Root>
+      <Popover.Root open={isOpen}>
         <Popover.Trigger asChild>
-          <button className="menu" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="menu"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen((prev) => !prev);
+            }}
+          >
             <img src={KebabMenuSVG} className="icon" alt="icon" />
           </button>
         </Popover.Trigger>

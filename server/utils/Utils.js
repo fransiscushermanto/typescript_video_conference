@@ -54,9 +54,13 @@ const validateJoiningRoom = async (user_id, room_id, room_password) => {
       user_id,
       status: ParticipantType.PARTICIPANT,
     });
+
+    const room = await admin.getRoom(room_id);
+
+    console.log("send notif");
     socket
       .to(room_id)
-      .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "add" });
+      .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "add", room });
     return true;
   }
 

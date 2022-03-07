@@ -2,6 +2,7 @@ import { DocumentData, QuerySnapshot } from "firebase/firestore";
 import { useContext, useEffect, useState } from "react";
 import { useQuery, UseQueryOptions } from "react-query";
 import { useParams } from "react-router-dom";
+import { queryClient } from "../..";
 import axios from "../../axios-instance";
 import { useFirebase, useMe, useSocket } from "../../hooks";
 import { Severities } from "../CustomSnackbar";
@@ -26,6 +27,13 @@ interface Participant {
 
 export function useGetRoom(options: UseQueryOptions<RoomModel, any> = {}) {
   const { room_id } = useParams<{ room_id }>();
+
+  useEffect(() => {
+    return () => {
+      queryClient.resetQueries("room");
+    };
+  }, []);
+
   return useQuery<RoomModel, any>(
     "room",
     async () => {

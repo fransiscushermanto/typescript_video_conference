@@ -4,7 +4,6 @@ import { useHistory, useRouteMatch, useParams } from "react-router";
 import { useGetRoomNotification, useGetUsersInWaitingRoom } from "../api-hooks";
 import { menus } from "./constants";
 import { useGetRole, useGetRoom, useMe, useSocket } from "../../hooks";
-import { pushNotification } from "../helper";
 
 const styled = {
   sidebar: css`
@@ -103,10 +102,6 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
         room.room_name
       ) {
         if (type === "add") {
-          pushNotification({
-            body: `Room ${room.room_name} has new participant requesting to join`,
-            link: `${window.origin}/room/${room.room_id}/waiting-room`,
-          });
           socket?.emit("UPDATE_ROOM_NOTIFICATION", {
             user_id: me?.user_id,
             room_id,
