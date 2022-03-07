@@ -7,6 +7,7 @@ router.route("/rooms/create").post(RoomController.createRoom);
 router.route("/rooms/join").post(RoomController.joinRoom);
 router.route("/rooms/verify").post(RoomController.checkRoom);
 router.route("/rooms/:room_id").delete(RoomController.deleteRoom);
+router.route("/rooms/:room_id").get(RoomController.getRoom);
 router
   .route("/rooms/:room_id/participants")
   .get(RoomController.getRoomParticipants);

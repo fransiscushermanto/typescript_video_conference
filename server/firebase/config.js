@@ -54,11 +54,16 @@ class FirebaseAdmin {
   }
 
   async getRoom(room_id) {
-    const res = await this.firestore
-      .collection(collections.rooms)
-      .doc(room_id)
-      .get();
-    return res.data();
+    try {
+      const res = await this.firestore
+        .collection(collections.rooms)
+        .doc(room_id)
+        .get();
+      return res.data();
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
   }
 
   async getUserNotifications(user_id) {

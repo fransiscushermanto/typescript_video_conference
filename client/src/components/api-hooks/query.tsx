@@ -24,6 +24,22 @@ interface Participant {
   user_name: string;
 }
 
+export function useGetRoom(options: UseQueryOptions<RoomModel, any> = {}) {
+  const { room_id } = useParams<{ room_id }>();
+  return useQuery<RoomModel, any>(
+    "room",
+    async () => {
+      const res = await axios.get(`/rooms/${room_id}`);
+      return res.data;
+    },
+    {
+      ...options,
+      enabled: options.enabled || false,
+      refetchOnWindowFocus: options.refetchOnWindowFocus || false,
+    },
+  );
+}
+
 export function useGetRooms(
   options: UseQueryOptions<{ rooms: RoomModel[] }, any> = {},
 ) {

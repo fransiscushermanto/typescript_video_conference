@@ -5,6 +5,7 @@ import Attendances from "./attendances/Attendance";
 import WaitingRoom from "./waitingRoom/WaitingRoom";
 import Home from "./home/Home";
 import MeetingRoom from "./meeting/MeetingRoom";
+import Setting from "./settings/Setting";
 import { memo } from "react";
 
 const styled = {
@@ -38,6 +39,8 @@ function Content() {
         return <MeetingRoom />;
       case "attendances":
         return <Attendances />;
+      case "settings":
+        return <Setting />;
       default:
         return <div></div>;
     }

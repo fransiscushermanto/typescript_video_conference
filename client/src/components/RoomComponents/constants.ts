@@ -27,11 +27,12 @@ export const menus = [
     name: "meeting",
     sidebar: false,
   },
-
-  // {
-  //   name: "settings",
-  //   label: "Settings",
-  // },
+  {
+    name: "settings",
+    label: "Settings",
+    role: [ParticipantType.HOST, ParticipantType.CO_HOST],
+    sidebar: true,
+  },
 ];
 
 export const FACE_DESCRIPTION_MAX_RESULTS = 160;

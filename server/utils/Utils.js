@@ -63,6 +63,10 @@ const validateJoiningRoom = async (user_id, room_id, room_password) => {
   return false;
 };
 
+const getRoom = async (room_id) => {
+  return await admin.getRoom(room_id);
+};
+
 /**
  *
  * @param {string} user_id
@@ -345,6 +349,7 @@ module.exports = {
   createRoom,
   validateJoiningRoom,
   existRoom,
+  getRoom,
   getRooms,
   checkUserRoom,
   getRoomParticipants,

@@ -2,6 +2,20 @@ require("fs");
 const utils = require("../utils/Utils");
 
 module.exports = {
+  getRoom: async (req, res, next) => {
+    try {
+      const { room_id } = req.params;
+
+      const room = await utils.getRoom(room_id);
+      res.status(200).send(room);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send({
+        error,
+        message: "Internal Server Error",
+      });
+    }
+  },
   getRooms: async (req, res, next) => {
     const { user_id } = req.params;
     try {

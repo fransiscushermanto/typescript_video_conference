@@ -1,11 +1,7 @@
 import React, { memo, useEffect } from "react";
 import { css, cx } from "@emotion/css";
 import { useHistory, useRouteMatch, useParams } from "react-router";
-import {
-  useGetRoomNotification,
-  useGetRoomParticipants,
-  useGetUsersInWaitingRoom,
-} from "../api-hooks";
+import { useGetRoomNotification, useGetUsersInWaitingRoom } from "../api-hooks";
 import { menus } from "./constants";
 import { useGetRole, useGetRoom, useMe, useSocket } from "../../hooks";
 import { pushNotification } from "../helper";
