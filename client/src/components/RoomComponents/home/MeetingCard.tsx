@@ -162,7 +162,7 @@ function MeetingCard({
   active_participants,
   attendance_start_at,
 }: IProps) {
-  const myRole = useGetRole();
+  const { role: myRole } = useGetRole();
   const { url } = useRouteMatch();
   const { room_id } = useParams<{ room_id }>();
   const { setInterval, clearInterval } = useInterval();

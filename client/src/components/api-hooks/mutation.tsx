@@ -205,7 +205,7 @@ export function useStoreParticipantAttendance(
     }
   >(async ({ room_id, meeting_id, ...payload }) => {
     const res = await axios.post(
-      `/meetings/${room_id}/${meeting_id}/attendance`,
+      `/meetings/${room_id}/${meeting_id}/attendances`,
       payload,
     );
 

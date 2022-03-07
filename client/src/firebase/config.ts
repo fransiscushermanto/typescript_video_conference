@@ -94,6 +94,21 @@ class Firebase {
     );
   }
 
+  getParticipantsMeetingAttendance(
+    { room_id, meeting_id },
+    observer?: IFirestoreOnSnapshotArguments,
+  ) {
+    return onSnapshot(
+      query(
+        collection(
+          this.firestore,
+          `${Collections.rooms}/${room_id}/${Collections.room_meetings}/${meeting_id}/${Collections.room_meeting_attendances}`,
+        ),
+      ),
+      observer,
+    );
+  }
+
   async uploadFileToStorage(file: File, path: string) {
     const storage = getStorage();
 

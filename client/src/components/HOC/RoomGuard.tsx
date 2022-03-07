@@ -16,7 +16,7 @@ interface Props extends RouteComponentProps {
 
 export default (OriginalComponent) => {
   const MixedComponent: React.FC<Props> = (props) => {
-    const myRole = useGetRole();
+    const { role: myRole, isLoading: isLoadingRole } = useGetRole();
     const { room_id, menu, meeting_id } =
       useParams<{ room_id; menu; meeting_id }>();
     const { url, path } = useRouteMatch();
@@ -54,7 +54,10 @@ export default (OriginalComponent) => {
       if (roomSocket) {
         switch (menu) {
           case "meeting":
-            checkRoomMeeting({ room_id, meeting_id });
+          case "attendances":
+            if (meeting_id) {
+              checkRoomMeeting({ room_id, meeting_id });
+            }
             setIsReady(true);
             break;
 
@@ -71,6 +74,7 @@ export default (OriginalComponent) => {
 
     if (!menus.some(({ name }) => name === menu)) return <NotFound />;
     if (
+      !isLoadingRole &&
       menus.some(
         ({ name, role }) => role && !role.includes(myRole) && name === menu,
       )

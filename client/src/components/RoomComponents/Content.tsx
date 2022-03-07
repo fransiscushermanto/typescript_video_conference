@@ -1,6 +1,7 @@
 import { css } from "@emotion/css";
-import { useHistory, useParams } from "react-router";
+import { useParams } from "react-router";
 import Participant from "./participants/Participant";
+import Attendances from "./attendances/Attendance";
 import WaitingRoom from "./waitingRoom/WaitingRoom";
 import Home from "./home/Home";
 import MeetingRoom from "./meeting/MeetingRoom";
@@ -35,6 +36,8 @@ function Content() {
         return <WaitingRoom />;
       case "meeting":
         return <MeetingRoom />;
+      case "attendances":
+        return <Attendances />;
       default:
         return <div></div>;
     }

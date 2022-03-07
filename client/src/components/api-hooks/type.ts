@@ -70,7 +70,7 @@ export interface RoomFacesModel {
 
 export interface ParticipantMeetingAttendanceModel {
   checked_in_at: Date;
-  user_id: string;
+  user_info: User;
   preview_image: string;
 }
 

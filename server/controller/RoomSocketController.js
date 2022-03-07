@@ -1,5 +1,3 @@
-const { convertArrayToObject } = require("../utils/helper");
-
 require("fs");
 
 const io = require("../../index").io;

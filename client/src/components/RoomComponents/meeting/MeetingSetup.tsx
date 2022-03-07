@@ -13,7 +13,6 @@ import NoMicrophoneSVG from "../../../assets/no-microphone-white.svg";
 import { MessageContext } from "../../Providers/MessageProvider";
 import { Severities } from "../../CustomSnackbar";
 import {
-  b64toBlob,
   dataURLtoFile,
   formatTimeDurationToReadableFormat,
   generateEmptyMediaTrack,
@@ -36,11 +35,12 @@ import {
   useGetMeetingRoomInfo,
   useGetParticipantMeetingAttendance,
   useGetRoomParticipantFaces,
-  useGetRoomParticipants,
   useStoreParticipantAttendance,
 } from "../../api-hooks";
 import { useParams } from "react-router-dom";
 import useFirebase from "./../../../hooks/use-firebase";
+import { MeetingAttendanceStatus } from "../attendances/types";
+import { queryClient } from "../../..";
 
 interface Props {
   onJoin: () => void;
@@ -190,8 +190,8 @@ function MeetingSetup({ onJoin }: Props) {
     ],
   } = useMeetingRoom();
 
-  const [isAttendanceExpired, setIsAttendanceExpired] =
-    useState<boolean>(false);
+  const [attendanceStatus, setAttendanceStatus] =
+    useState<MeetingAttendanceStatus>();
   const [strAttendanceDuration, setStrAttendanceDuration] =
     useState<string>("");
   const [stopDetection, setStopDetection] = useState<boolean>(false);
@@ -207,14 +207,15 @@ function MeetingSetup({ onJoin }: Props) {
     >[]
   >([]);
 
-  const { participants } = useGetRoomParticipants();
   const { data: meetingInfo } = useGetMeetingRoomInfo(
     { room_id, meeting_id },
     { enabled: true },
   );
   const { data: faces } = useGetRoomParticipantFaces({ enabled: true });
-  const { data: participantMeetingAttendance } =
-    useGetParticipantMeetingAttendance({ enabled: true });
+  const {
+    data: participantMeetingAttendance,
+    isFetching: isFetchingParticipantMeetingAttendance,
+  } = useGetParticipantMeetingAttendance({ enabled: true });
 
   const { mutateAsync } = useStoreParticipantAttendance();
 
@@ -283,17 +284,18 @@ function MeetingSetup({ onJoin }: Props) {
           .find((track) => track.kind === "video")
           ?.getSettings().deviceId;
 
+        if (!videoDevices) refetchUserMedia();
+        // localStreamRef.current = localStream;
+        // videoRef.current.srcObject = localStream;
+        // videoRef.current.autoplay = true;
+        // videoRef.current.muted = true;
+
         if (selectedVideoDevice) {
           setSelectedMediaDevices((prev) => ({
             ...(prev && prev),
             video: selectedVideoDevice,
           }));
         }
-        if (!videoDevices) refetchUserMedia();
-        localStreamRef.current = localStream;
-        videoRef.current.srcObject = localStream;
-        videoRef.current.autoplay = true;
-        videoRef.current.muted = true;
 
         setMeetingRoomPermissions((prev) => {
           const data = {
@@ -379,11 +381,12 @@ function MeetingSetup({ onJoin }: Props) {
               `${room_id}/meetings/${meeting_id}`,
             );
 
+            const url = await firebase.getFileFromStorage(metadata.fullPath);
             await mutateAsync({
               room_id,
               meeting_id,
               user_id: me.user_id,
-              preview_image: metadata.fullPath,
+              preview_image: url,
             });
             setMessages([
               ...messages,
@@ -397,7 +400,20 @@ function MeetingSetup({ onJoin }: Props) {
         });
       }
     }
-  }, [modelLoaded, imgFullDesc, faceMatcher, participants]);
+  }, [
+    modelLoaded,
+    getFullFaceDescription,
+    drawRectAndLabelFace,
+    imgFullDesc,
+    faceMatcher,
+    me.user_id,
+    firebase,
+    room_id,
+    meeting_id,
+    mutateAsync,
+    setMessages,
+    messages,
+  ]);
 
   const changeCameraDevice = useCallback(async () => {
     try {
@@ -463,14 +479,14 @@ function MeetingSetup({ onJoin }: Props) {
 
   useEffect(() => {
     let interval;
-    if (!stopDetection) {
+    if (!stopDetection && me) {
       interval = setInterval(capture, DRAW_TIME_INTERVAL);
     } else {
       setStopDetection(true);
       clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [capture, stopDetection]);
+  }, [capture, stopDetection, me]);
 
   useEffect(() => {
     if (videoDevices) {
@@ -492,33 +508,62 @@ function MeetingSetup({ onJoin }: Props) {
 
   useEffect(() => {
     startDevice("both");
-
     return () => {
       stopCamera();
+      queryClient.resetQueries("participant-meeting-attendance");
     };
   }, []);
 
   useEffect(() => {
-    if (!isAttendanceExpired && !participantMeetingAttendance) {
-      initModels();
-    } else {
-      setStopDetection(true);
+    if (attendanceStatus && !isFetchingParticipantMeetingAttendance) {
+      if (attendanceStatus === MeetingAttendanceStatus.ONGOING) {
+        if (!participantMeetingAttendance) {
+          initModels();
+        } else {
+          setStopDetection(true);
+        }
+      } else {
+        setStopDetection(true);
+      }
     }
-  }, [isAttendanceExpired, participantMeetingAttendance]);
+  }, [
+    attendanceStatus,
+    participantMeetingAttendance,
+    isFetchingParticipantMeetingAttendance,
+  ]);
 
   useEffect(() => {
     let interval;
     if (meetingInfo) {
+      const incoming = new Date() < new Date(meetingInfo.attendance_start_at);
+      const ongoing = new Date() < new Date(meetingInfo.attendance_finish_at);
+      const finish = new Date() >= new Date(meetingInfo.attendance_finish_at);
+      if (finish) {
+        setAttendanceStatus(MeetingAttendanceStatus.FINISH);
+      } else if (incoming) {
+        setAttendanceStatus(MeetingAttendanceStatus.INCOMING);
+      } else if (ongoing) {
+        setAttendanceStatus(MeetingAttendanceStatus.ONGOING);
+      }
+
       interval = setInterval(() => {
+        const incoming = new Date() < new Date(meetingInfo.attendance_start_at);
+        const ongoing = new Date() < new Date(meetingInfo.attendance_finish_at);
+        const finish = new Date() >= new Date(meetingInfo.attendance_finish_at);
+        if (finish) {
+          setAttendanceStatus(MeetingAttendanceStatus.FINISH);
+        } else if (incoming) {
+          setAttendanceStatus(MeetingAttendanceStatus.INCOMING);
+        } else if (ongoing) {
+          setAttendanceStatus(MeetingAttendanceStatus.ONGOING);
+        }
+
         setStrAttendanceDuration(
           formatTimeDurationToReadableFormat({
             start: new Date(),
             end: new Date(meetingInfo.attendance_finish_at),
             format: ["days", "hours", "minutes", "seconds"],
           }),
-        );
-        setIsAttendanceExpired(
-          new Date() >= new Date(meetingInfo.attendance_finish_at),
         );
       }, 1e3);
     }
@@ -543,7 +588,7 @@ function MeetingSetup({ onJoin }: Props) {
     <div className={styled.root}>
       <div className="col">
         <div className="attendance-warning">
-          {!isAttendanceExpired ? (
+          {attendanceStatus === MeetingAttendanceStatus.ONGOING ? (
             <p>
               Attendance will expire in{" "}
               <b>
@@ -553,9 +598,11 @@ function MeetingSetup({ onJoin }: Props) {
               </b>
             </p>
           ) : (
-            <p>
-              Attendance is <b>expired</b>.
-            </p>
+            attendanceStatus === MeetingAttendanceStatus.FINISH && (
+              <p>
+                Attendance is <b>expired</b>.
+              </p>
+            )
           )}
         </div>
         <div className="video-wrapper">
@@ -568,6 +615,7 @@ function MeetingSetup({ onJoin }: Props) {
                     deviceId: selectedMediaDevices.video,
                     width: { min: 640, ideal: 740, max: 1920 },
                     height: { min: 360, ideal: 416, max: 1080 },
+                    facingMode: "user",
                   }
                 : false
             }
@@ -577,7 +625,7 @@ function MeetingSetup({ onJoin }: Props) {
             }}
           />
           {!stopDetection && <canvas ref={canvasRef} id="video-canvas" />}
-          {(!modelLoaded ||
+          {((!modelLoaded && !stopDetection) ||
             (!stopDetection && imgFullDesc && imgFullDesc.length < 1)) && (
             <div className="loading-wrapper">
               <CircularProgress />

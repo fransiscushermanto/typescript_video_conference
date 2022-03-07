@@ -1,6 +1,4 @@
-const fs = require("fs");
-const { send } = require("process");
-
+require("fs");
 const utils = require("../utils/Utils");
 
 module.exports = {

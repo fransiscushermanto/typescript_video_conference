@@ -640,7 +640,7 @@ class FirebaseAdmin {
     }
   }
 
-  async getRoomMeetingAttendances(room_id, meeting_id) {
+  async getParticipantsMeetingAttendance(room_id, meeting_id) {
     try {
       const res = await this.firestore
         .collection(collections.rooms)
@@ -650,7 +650,16 @@ class FirebaseAdmin {
         .collection(collections.room_meeting_attendances)
         .get();
 
-      return res.docs.map((doc) => ({ ...doc.data(), user_id: doc.id }));
+      return Promise.all(
+        res.docs.map(async (doc) => {
+          const user_info = await this.getUser(doc.id);
+
+          return {
+            ...doc.data(),
+            user_info,
+          };
+        }),
+      );
     } catch (error) {
       console.log(error);
       throw error;
@@ -659,11 +668,13 @@ class FirebaseAdmin {
 
   async getParticipantMeetingAttendance(room_id, meeting_id, user_id) {
     try {
-      const attendances = await this.getRoomMeetingAttendances(
+      const attendances = await this.getParticipantsMeetingAttendance(
         room_id,
         meeting_id,
       );
-      return attendances.find((attendance) => attendance.user_id === user_id);
+      return attendances.find(
+        (attendance) => attendance.user_info.uid === user_id,
+      );
     } catch (error) {
       console.log(error);
       throw error;
@@ -677,14 +688,7 @@ class FirebaseAdmin {
     preview_image,
   ) {
     try {
-      const checked_in_time = new Date().toString();
-
-      const attendances = await this.getRoomMeetingAttendances(
-        room_id,
-        meeting_id,
-      );
-
-      console.log("attendance", attendances);
+      const checked_in_at = new Date().toString();
 
       await this.firestore
         .collection(collections.rooms)
@@ -695,13 +699,15 @@ class FirebaseAdmin {
         .doc(user_id)
         .set({
           preview_image,
-          checked_in_time,
+          checked_in_at,
         });
     } catch (error) {
       console.log(error);
       throw error;
     }
   }
+
+  async getImageFromStorage(path) {}
 }
 
 const admin = new FirebaseAdmin();

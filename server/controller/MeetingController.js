@@ -89,8 +89,23 @@ module.exports = {
       return res.status(500).send({ message: "Internal Server Error", error });
     }
   },
+  getParticipantsMeetingAttendace: async (req, res, next) => {
+    const { room_id, meeting_id } = req.params;
+    try {
+      const participants_attendance =
+        await utils.getParticipantsMeetingAttendance(room_id, meeting_id);
+      return res.status(200).send({
+        participants_attendance: participants_attendance.sort(
+          (a, b) =>
+            new Date(a.checked_in_at).valueOf() -
+            new Date(b.checked_in_at).valueOf(),
+        ),
+      });
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
+  },
   storeParticipantMeetingAttendance: async (req, res, next) => {
-    console.log(req.file);
     const { room_id, meeting_id } = req.params;
     const { user_id, preview_image } = req.body;
     try {
@@ -100,6 +115,25 @@ module.exports = {
         user_id,
         preview_image,
       );
+      return res.status(200).send();
+    } catch (error) {
+      return res.status(500).send({ message: "Internal Server Error", error });
+    }
+  },
+  downloadRoomAttendanceToExcel: async (req, res, next) => {
+    const { room_id, meeting_id } = req.params;
+    try {
+      const workbook = await utils.downloadRoomAttendanceToExcel(
+        room_id,
+        meeting_id,
+      );
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+
+      await workbook.xlsx.write(res);
       return res.status(200).send();
     } catch (error) {
       return res.status(500).send({ message: "Internal Server Error", error });

@@ -173,7 +173,9 @@ export function useGetRoomParticipants(
       firebase.getRoomParticipants({
         next: async (snapshot: QuerySnapshot<DocumentData>) => {
           snapshot.docChanges().forEach((change) => {
-            if (change.type === "modified") refetch();
+            if (options.enabled) {
+              if (change.type === "modified") refetch();
+            }
           });
         },
       });
@@ -189,7 +191,7 @@ export function useGetRoomParticipants(
         unsub();
       }
     };
-  }, [room_id]);
+  }, [room_id, options.enabled]);
   return { participants, refetch, ...resProps };
 }
 
@@ -273,6 +275,7 @@ export function useGetRoomMeetings(
     {
       ...options,
       enabled: options.enabled || false,
+      refetchOnWindowFocus: options.refetchOnWindowFocus || false,
       onSuccess: callAllFunctions((data) => {
         setRoomMeetings(data?.room_meetings);
       }, options.onSuccess),
@@ -294,7 +297,9 @@ export function useGetRoomMeetings(
       firebase.getRoomMeetings(room_id, {
         next: async (snapshot: QuerySnapshot<DocumentData>) => {
           snapshot.docChanges().forEach(() => {
-            refetch();
+            if (options.enabled) {
+              refetch();
+            }
           });
         },
       });
@@ -306,7 +311,7 @@ export function useGetRoomMeetings(
         unsub();
       }
     };
-  }, [room_id]);
+  }, [room_id, options.enabled]);
 
   return { roomMeetings, refetch, ...resProps };
 }
@@ -371,23 +376,14 @@ export function useGetRoomParticipantsFaces(
 export function useGetParticipantMeetingAttendance(
   options: UseQueryOptions<ParticipantMeetingAttendanceModel, any> = {},
 ) {
-  const firebase = useFirebase();
   const [me] = useMe();
   const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
   return useQuery<ParticipantMeetingAttendanceModel, any>(
     "participant-meeting-attendance",
     async () => {
       const res = await axios.get(
-        `/meetings/${room_id}/${meeting_id}/attendance/${me.user_id}`,
+        `/meetings/${room_id}/${meeting_id}/attendances/${me.user_id}`,
       );
-
-      const url = await firebase.getFileFromStorage(
-        res.data.participant_attendance.preview_image,
-      );
-
-      if (res.data.participant_attendance) {
-        res.data.participant_attendance.preview_image = url;
-      }
 
       return res.data.participant_attendance;
     },
@@ -395,6 +391,91 @@ export function useGetParticipantMeetingAttendance(
       ...options,
       enabled: options.enabled || false,
       refetchOnWindowFocus: options.refetchOnWindowFocus || false,
+    },
+  );
+}
+
+export function useGetParticipantsMeetingAttendance(
+  options: UseQueryOptions<ParticipantMeetingAttendanceModel[], any> & {
+    meeting_id?: string;
+  } = {},
+) {
+  const firebase = useFirebase();
+  const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
+  const { refetch, ...resProps } = useQuery<
+    ParticipantMeetingAttendanceModel[],
+    any
+  >(
+    `participants-meeting-attendance/${meeting_id || options.meeting_id}`,
+    async () => {
+      const res = await axios.get(
+        `/meetings/${room_id}/${meeting_id || options.meeting_id}/attendances`,
+      );
+
+      return res.data.participants_attendance;
+    },
+    {
+      ...options,
+      enabled: options.enabled || false,
+      refetchOnWindowFocus: options.refetchOnWindowFocus || false,
+    },
+  );
+
+  useEffect(() => {
+    if (room_id) {
+      firebase.getParticipantsMeetingAttendance(
+        { room_id, meeting_id },
+        {
+          next: async (snapshot: QuerySnapshot<DocumentData>) => {
+            snapshot.docChanges().forEach(() => {
+              if (options.enabled) {
+                refetch();
+              }
+            });
+          },
+        },
+      );
+    }
+
+    return () => {
+      if (room_id) {
+        const unsub = firebase.getRoomMeetings({ room_id, meeting_id });
+        unsub();
+      }
+    };
+  }, [room_id, meeting_id, options.enabled]);
+
+  return { refetch, ...resProps };
+}
+
+export function useGetMeetingAttendanceReport(
+  options: Omit<
+    UseQueryOptions<any, any>,
+    "enabled" | "refetchOnWindowFocus"
+  > = {},
+) {
+  const { room_id, meeting_id } = useParams<{ room_id; meeting_id }>();
+
+  return useQuery(
+    "attendance-report",
+    async () => {
+      const res = await axios.get(
+        `/meetings/${room_id}/${meeting_id}/attendances/download`,
+        {
+          headers: {
+            "Content-Type":
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+          responseType: "arraybuffer",
+        },
+      );
+
+      return res;
+    },
+    {
+      ...options,
+      enabled: false,
+      refetchOnWindowFocus: false,
     },
   );
 }

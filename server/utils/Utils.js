@@ -4,6 +4,8 @@ const { admin } = require("../firebase/config");
 const ParticipantType = require("./types");
 const socket = require("../../index").io;
 const helper = require("./helper");
+const excelJS = require("exceljs");
+const produce = require("immer").produce;
 
 const user_sockets = {};
 
@@ -225,12 +227,117 @@ async function storeRoomMeetingUserAttendance(
   );
 }
 
+async function getParticipantsMeetingAttendance(room_id, meeting_id) {
+  return await admin.getParticipantsMeetingAttendance(room_id, meeting_id);
+}
+
 async function getParticipantMeetingAttendance(room_id, meeting_id, user_id) {
   return await admin.getParticipantMeetingAttendance(
     room_id,
     meeting_id,
     user_id,
   );
+}
+
+async function downloadRoomAttendanceToExcel(room_id, meeting_id) {
+  try {
+    let meeting_attendance = await admin.getParticipantsMeetingAttendance(
+      room_id,
+      meeting_id,
+    );
+
+    const workbook = new excelJS.Workbook();
+
+    const worksheet = workbook.addWorksheet("Attendance");
+    worksheet.columns = [
+      {
+        header: "No",
+        key: "no",
+        width: 10,
+      },
+      {
+        header: "Email",
+        key: "user_email",
+        width: 60,
+      },
+      {
+        header: "Name",
+        key: "user_name",
+        width: 60,
+      },
+      {
+        header: "Check-in Time",
+        key: "checked_in_at",
+        width: 60,
+      },
+      {
+        header: "Preview Image",
+        key: "preview_image",
+        width: 100,
+      },
+    ];
+
+    meeting_attendance = await Promise.all(
+      meeting_attendance.map(async (attendance, i) => {
+        attendance.no = i + 1;
+        attendance.user_name = attendance.user_info.displayName;
+        attendance.user_email = attendance.user_info.email;
+        delete attendance.user_info;
+        return attendance;
+      }),
+    );
+
+    meeting_attendance.forEach((attendance) => {
+      worksheet.addRow(attendance);
+    });
+
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    worksheet.columns[0].alignment = {
+      vertical: "middle",
+      horizontal: "center",
+    };
+
+    worksheet.getRows(2, worksheet.columns[4].values.length).forEach((row) => {
+      const targetCell = row.getCell(5);
+
+      if (targetCell.value) {
+        targetCell.value = {
+          text: targetCell.value,
+          hyperlink: targetCell.value,
+          tooltip: targetCell.value,
+        };
+      }
+    });
+
+    for (let i = 0; i < worksheet.columns.length; i++) {
+      let maxWidth = 0;
+
+      const column = worksheet.columns[i];
+      for (let j = 1; j < column.values.length; j++) {
+        let columnLength;
+        const columnValue = column.values[j];
+        if (typeof columnValue === "string") {
+          columnLength = columnValue.length;
+        } else if (typeof columnValue === "object") {
+          columnLength = columnValue.text.length;
+        }
+
+        if (columnLength > maxWidth) {
+          maxWidth = columnLength;
+        }
+      }
+
+      column.width = maxWidth < 10 ? 10 : maxWidth;
+    }
+
+    return workbook;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 module.exports = {
@@ -256,4 +363,6 @@ module.exports = {
   getRoomFaces,
   storeRoomMeetingUserAttendance,
   getParticipantMeetingAttendance,
+  getParticipantsMeetingAttendance,
+  downloadRoomAttendanceToExcel,
 };

@@ -4,12 +4,15 @@ import { useGetRoomParticipants } from "../components/api-hooks";
 
 export default function useGetRole() {
   const [me] = useMe();
-  const { participants } = useGetRoomParticipants();
+  const { participants, isFetching } = useGetRoomParticipants();
 
   return useMemo(
-    () =>
-      participants?.find((participant) => participant.user_id === me.user_id)
-        ?.role,
-    [participants, me.user_id],
+    () => ({
+      role: participants?.find(
+        (participant) => participant.user_id === me.user_id,
+      )?.role,
+      isLoading: isFetching,
+    }),
+    [participants, isFetching, me.user_id],
   );
 }

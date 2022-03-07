@@ -45,7 +45,7 @@ const styled = {
 };
 
 function UserWaitingCard({ name, onAccept, onReject }: IUserWaitingCardProps) {
-  const myRole = useGetRole();
+  const { role: myRole } = useGetRole();
 
   return (
     <div className={styled.root}>

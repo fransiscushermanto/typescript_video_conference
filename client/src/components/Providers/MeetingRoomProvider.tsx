@@ -469,7 +469,7 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
         participants: Participant[];
         media: "cam" | "mic";
       }) => {
-        participants.forEach(async (participant) => {
+        participants?.forEach(async (participant) => {
           const pc = pcsRef.current[participant.user_id];
           console.log(pcsRef.current, participant.user_id, pc);
           pc.ontrack = (e) => {

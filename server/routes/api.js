@@ -39,10 +39,16 @@ router
   .route("/meetings/:room_id/:meeting_id")
   .delete(MeetingController.deleteMeeting);
 router
-  .route("/meetings/:room_id/:meeting_id/attendance")
+  .route("/meetings/:room_id/:meeting_id/attendances")
   .post(MeetingController.storeParticipantMeetingAttendance);
 router
-  .route("/meetings/:room_id/:meeting_id/attendance/:user_id")
+  .route("/meetings/:room_id/:meeting_id/attendances")
+  .get(MeetingController.getParticipantsMeetingAttendace);
+router
+  .route("/meetings/:room_id/:meeting_id/attendances/download")
+  .get(MeetingController.downloadRoomAttendanceToExcel);
+router
+  .route("/meetings/:room_id/:meeting_id/attendances/:user_id")
   .get(MeetingController.getParticipantMeetingAttendance);
 
 router

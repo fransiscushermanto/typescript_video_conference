@@ -314,11 +314,13 @@ function RegisterFaceModal({ onClose }: Props) {
       `${room_id}/faces/${me.user_id}`,
     );
 
+    const url = await firebase.getFileFromStorage(metadata.fullPath);
+
     mutate({
       room_id,
       user_id: me.user_id,
       face_description: imgFaceDescriptor.toString(),
-      preview_image: metadata.fullPath,
+      preview_image: url,
     });
   }, [firebase, imgFaceDescriptor, imgPreview, me.user_id, mutate, room_id]);
 
@@ -415,7 +417,9 @@ function RegisterFaceModal({ onClose }: Props) {
               onChange={(e) => setSelectedVideoDevices(e.target.value)}
             >
               {videoDevices?.map((device) => (
-                <option value={device.deviceId}>{device.label}</option>
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label}
+                </option>
               ))}
             </select>
 

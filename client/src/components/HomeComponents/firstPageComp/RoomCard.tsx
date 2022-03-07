@@ -99,7 +99,7 @@ function RoomCard({ room }: IRoomCard) {
   const { room_name, room_id, status } = room;
   const [me] = useMe();
   const history = useHistory();
-  const myRole = useGetRole();
+  const { role: myRole } = useGetRole();
   const { mutate: mutateDeleteRoom } = useDeleteRoom();
 
   const isHost = myRole === ParticipantType.HOST;

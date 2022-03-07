@@ -63,7 +63,7 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
   const [me] = useMe();
   const { room_id } = useParams<{ room_id }>();
   const { url } = useRouteMatch();
-  const myRole = useGetRole();
+  const { role: myRole } = useGetRole();
   const room = useGetRoom(room_id);
 
   const { roomNotifications } = useGetRoomNotification({

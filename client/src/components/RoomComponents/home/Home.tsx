@@ -14,6 +14,7 @@ import useRoomSocket from "./../../../hooks/use-room-socket";
 import RegisterFaceModal from "./RegisterFaceModal";
 import { queryClient } from "../../..";
 import { MAX_FACES } from "../constants";
+import { CircularProgress } from "@material-ui/core";
 
 const styled = {
   root: css`
@@ -67,6 +68,13 @@ const styled = {
         width: 500px;
       }
     }
+
+    .loading-wrapper {
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
   `,
   meetingListWrapper: (maxHeight: number) => css`
     max-height: ${`${maxHeight - 70}px` || "100%"};
@@ -87,7 +95,8 @@ function Home() {
   const [meetingsActiveParticipant, setMeetingActiveParticipant] = useState({});
   const [openModal, setOpenModal] = useState(INITIAL_MODAL);
 
-  const { roomMeetings } = useGetRoomMeetings({ enabled: true });
+  const { roomMeetings, isFetching: isRoomMeetingsLoading } =
+    useGetRoomMeetings({ enabled: true });
   const { data: participantFaces, isFetching: isParticipantFaceLoading } =
     useGetRoomParticipantFaces({
       enabled: true,
@@ -154,7 +163,13 @@ function Home() {
       <div
         className={cx("meeting-list", styled.meetingListWrapper(bounds.height))}
       >
-        {groupedRoomMeetings &&
+        {(isRoomMeetingsLoading && !roomMeetings) ||
+        isParticipantFaceLoading ? (
+          <div className="loading-wrapper">
+            <CircularProgress />
+          </div>
+        ) : (
+          groupedRoomMeetings &&
           groupedRoomMeetings.map(({ date, meetings }) => {
             return (
               <React.Fragment key={date}>
@@ -178,7 +193,8 @@ function Home() {
                 </ul>
               </React.Fragment>
             );
-          })}
+          })
+        )}
       </div>
 
       {openModal["register-face"] && (
