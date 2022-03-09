@@ -45,6 +45,7 @@ function MeetingParticipantVideo({ stream, muted, user_id, user_name }: Props) {
   }, [stream, isAudioOnly]);
 
   useEffect(() => {
+    console.log("stream", stream.getTracks());
     if (isAudioOnly) {
       audioRef.current.srcObject = stream;
       audioRef.current.autoplay = stream?.active;

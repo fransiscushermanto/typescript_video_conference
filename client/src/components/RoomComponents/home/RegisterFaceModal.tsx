@@ -195,12 +195,12 @@ function RegisterFaceModal({ onClose }: Props) {
     isLoadingFaceDetector,
   } = useFaceRecognition();
 
-  const modelLoaded =
+  const isModelReady =
     !is68FacialLandmarkLoading &&
     !isFeatureExtractorLoading &&
     !isLoadingFaceDetector;
 
-  const { mutate, isLoading: isLoadingStoreFace } = useStoreFace();
+  const { mutateAsync, isLoading: isLoadingStoreFace } = useStoreFace();
 
   const [imgFullDesc, setImgFullDesc] = useState<
     WithFaceDescriptor<
@@ -216,7 +216,7 @@ function RegisterFaceModal({ onClose }: Props) {
     data: savedImage,
     refetch: refetchGetParticipantFace,
     isFetching: isGetParticipantFaceLoading,
-  } = useGetRoomParticipantFaces({ enabled: true });
+  } = useGetRoomParticipantFaces({ enabled: isModelReady });
   const { videoDevices, refetchUserMedia } = useMediaDevices();
   const [selectedVideoDevices, setSelectedVideoDevices] = useState<string>();
   const [localSavedImage, setLocalSavedImage] = useState(savedImage);
@@ -271,7 +271,7 @@ function RegisterFaceModal({ onClose }: Props) {
 
   const capture = useCallback(() => {
     if (
-      modelLoaded &&
+      isModelReady &&
       videoRef.current?.readyState === 4 &&
       canvasRef.current
     ) {
@@ -290,17 +290,20 @@ function RegisterFaceModal({ onClose }: Props) {
       setImagePreview(screenShot);
       getFullFaceDescription(screenShot, FACE_DESCRIPTION_MAX_RESULTS)
         .then((data) => {
-          setImgFullDesc(data);
-          setImgFaceDesctiptor(data[0]?.descriptor);
+          if (data) {
+            setImgFullDesc(data);
+            setImgFaceDesctiptor(data[0]?.descriptor);
+          }
         })
         .catch((e) => console.log("getFullFaceDescription", e));
       canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
       const ctx = canvas.getContext("2d");
       drawFaceRect(imgFullDesc, ctx);
     }
-  }, [modelLoaded, imgFullDesc]);
+  }, [isModelReady, imgFullDesc]);
 
   const onSave = useCallback(async () => {
+    videoRef.current.pause();
     const now = new Date();
     const file = dataURLtoFile(
       imgPreview,
@@ -316,13 +319,24 @@ function RegisterFaceModal({ onClose }: Props) {
 
     const url = await firebase.getFileFromStorage(metadata.fullPath);
 
-    mutate({
+    await mutateAsync({
       room_id,
       user_id: me.user_id,
       face_description: imgFaceDescriptor.toString(),
       preview_image: url,
     });
-  }, [firebase, imgFaceDescriptor, imgPreview, me.user_id, mutate, room_id]);
+
+    refetchGetParticipantFace();
+    videoRef.current.play();
+  }, [
+    firebase,
+    imgFaceDescriptor,
+    imgPreview,
+    me.user_id,
+    mutateAsync,
+    refetchGetParticipantFace,
+    room_id,
+  ]);
 
   useEffect(() => {
     setLocalSavedImage(savedImage);
@@ -330,13 +344,17 @@ function RegisterFaceModal({ onClose }: Props) {
 
   useEffect(() => {
     let interval;
-    if (localSavedImage?.length !== MAX_FACES) {
+    if (
+      localSavedImage?.length !== MAX_FACES &&
+      isModelReady &&
+      !isLoadingStoreFace
+    ) {
       interval = setInterval(capture, DRAW_TIME_INTERVAL);
     } else {
       clearInterval(interval);
     }
     return () => clearInterval(interval);
-  }, [capture, localSavedImage]);
+  }, [capture, localSavedImage, isModelReady, isLoadingStoreFace]);
 
   useEffect(() => {
     startCamera();
@@ -392,14 +410,14 @@ function RegisterFaceModal({ onClose }: Props) {
               )}
               {!allowedCamera && (
                 <button
-                  disabled={!modelLoaded}
+                  disabled={!isModelReady}
                   onClick={startCamera}
                   className="btn btn-outline-primary btn-start-video"
                 >
                   Start Video
                 </button>
               )}
-              {(!modelLoaded || imgFullDesc.length < 1) && (
+              {(!isModelReady || imgFullDesc.length < 1) && (
                 <div className="loading-wrapper">
                   <CircularProgress />
                 </div>
@@ -429,8 +447,6 @@ function RegisterFaceModal({ onClose }: Props) {
               disabled={
                 !allowedCamera ||
                 imgFullDesc.length < 1 ||
-                !imgFaceDescriptor ||
-                (imgFaceDescriptor && imgFaceDescriptor.length !== 128) ||
                 isLoadingStoreFace ||
                 isGetParticipantFaceLoading ||
                 localSavedImage?.length >= MAX_FACES

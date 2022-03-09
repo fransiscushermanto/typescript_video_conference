@@ -1,8 +1,8 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext } from "react";
 import { MessageContext } from "../Providers/MessageProvider";
 import { Severities } from "../CustomSnackbar";
 import { useCheckRoom, useJoinRoom } from "../api-hooks";
-import { useMe } from "../../hooks";
+import { useMe, useSocket } from "../../hooks";
 import { useFormContext } from "react-hook-form";
 
 interface Props {
@@ -20,6 +20,7 @@ const JoinPage: React.FC<Props> = ({
   onSubmit,
   errors,
 }) => {
+  const socket = useSocket();
   const [me] = useMe();
   const [messages, setMessages] = useContext(MessageContext);
   const { getValues } = useFormContext();
@@ -49,6 +50,7 @@ const JoinPage: React.FC<Props> = ({
 
   const { mutateAsync: mutateAsyncJoinRoom } = useJoinRoom({
     onSuccess: () => {
+      socket.emit("JOIN_ROOM", { room_id: getValues().room_id, me });
       onSubmit(getValues());
     },
     onError: ({ response: { data } }) => {

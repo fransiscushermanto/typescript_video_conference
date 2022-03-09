@@ -152,15 +152,26 @@ const MeetingRoomProvider: React.FC<Props> = ({ children, isReadyToJoin }) => {
     try {
       const video = meetingRoomPermission.camera && {
         ...videoConstraints,
-        ...(selectedMediaDevices.video && {
-          deviceId: selectedMediaDevices.video,
-        }),
       };
       const localStream = await navigator.mediaDevices.getUserMedia({
         audio: meetingRoomPermission.microphone,
         video,
       });
-      console.log("stream local", localStream.getTracks());
+
+      const videoStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          deviceId: selectedMediaDevices.video,
+        },
+      });
+
+      localStream.removeTrack(localStream.getVideoTracks()[0]);
+      localStream.addTrack(videoStream.getTracks()[0]);
+      console.log(
+        "stream local",
+        videoStream.getTracks(),
+        localStream.getTracks(),
+        selectedMediaDevices.video,
+      );
       localStreamRef.current = localStream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = localStream;

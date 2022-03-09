@@ -1,6 +1,7 @@
 require("fs");
 const { admin } = require("../firebase/config");
 const { user_sockets, rooms } = require("../utils/Utils");
+const Roles = require("../utils/types");
 
 module.exports = function (socket, io) {
   console.log(`${socket.id} is connected`);
@@ -22,8 +23,42 @@ module.exports = function (socket, io) {
     }
   });
 
-  socket.on("JOIN_ROOM", ({ room_id }) => {
+  socket.on("JOIN_ROOM", async ({ room_id, me }) => {
+    if (me) {
+      const participant = await admin.getRoomParticipant(me.user_id, room_id);
+      if (rooms[room_id]) {
+        rooms[room_id] = [
+          ...rooms[room_id].filter(
+            (participant) => participant.user_id !== me.user_id,
+          ),
+          { user_id: me.user_id, role: participant?.role || Roles.PARTICIPANT },
+        ];
+      } else {
+        rooms[room_id] = [
+          { user_id: me.user_id, role: participant?.role || Roles.PARTICIPANT },
+        ];
+      }
+    }
+
     socket.join(room_id);
+  });
+
+  socket.on("LEAVE_ROOM", ({ room_id, me }) => {
+    if (rooms[room_id]) {
+      const participant = rooms[room_id].find(
+        (participant) => participant.user_id === me.user_id,
+      );
+
+      if (participant?.role === Roles.HOST) {
+        delete rooms[room_id];
+      } else {
+        rooms[room_id] = rooms[room_id].filter(
+          (participant) => participant.user_id !== me.user_id,
+        );
+      }
+    }
+
+    socket.leave(room_id);
   });
 
   socket.on("UPDATE_ROOM_NOTIFICATION", async ({ user_id, room_id, notif }) => {

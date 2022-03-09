@@ -1,5 +1,11 @@
 import { css, cx } from "@emotion/css";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   useFaceRecognition,
   useMe,
@@ -285,7 +291,8 @@ function MeetingSetup({ onJoin }: Props) {
           ?.getSettings().deviceId;
 
         if (!videoDevices) refetchUserMedia();
-        // localStreamRef.current = localStream;
+        localStreamRef.current = localStream;
+        // webcamRef.current.stream = localStream;
         // videoRef.current.srcObject = localStream;
         // videoRef.current.autoplay = true;
         // videoRef.current.muted = true;
@@ -428,9 +435,10 @@ function MeetingSetup({ onJoin }: Props) {
         audio: meetingRoomPermissions.microphone,
       });
       localStreamRef.current = localStream;
-      videoRef.current.srcObject = localStream;
-      videoRef.current.autoplay = true;
-      videoRef.current.muted = true;
+
+      // videoRef.current.srcObject = localStream;
+      // videoRef.current.autoplay = true;
+      // videoRef.current.muted = true;
     } catch (error) {
       console.log("change camera error", error);
     }
@@ -570,20 +578,6 @@ function MeetingSetup({ onJoin }: Props) {
     return () => clearInterval(interval);
   }, [meetingInfo]);
 
-  useEffect(() => {
-    if (
-      selectedMediaDevices.video &&
-      localStreamRef.current &&
-      meetingRoomPermissions.camera
-    ) {
-      changeCameraDevice();
-    }
-  }, [
-    changeCameraDevice,
-    meetingRoomPermissions.camera,
-    selectedMediaDevices.video,
-  ]);
-
   return (
     <div className={styled.root}>
       <div className="col">
@@ -606,24 +600,24 @@ function MeetingSetup({ onJoin }: Props) {
           )}
         </div>
         <div className="video-wrapper">
-          <Webcam
-            audioConstraints={meetingRoomPermissions.microphone}
-            screenshotFormat="image/jpeg"
-            videoConstraints={
-              meetingRoomPermissions.camera
-                ? {
-                    deviceId: selectedMediaDevices.video,
-                    width: { min: 640, ideal: 740, max: 1920 },
-                    height: { min: 360, ideal: 416, max: 1080 },
-                    facingMode: "user",
-                  }
-                : false
-            }
-            ref={(e) => {
-              videoRef.current = e?.video;
-              webcamRef.current = e;
-            }}
-          />
+          {meetingRoomPermissions.camera ? (
+            <Webcam
+              audioConstraints={meetingRoomPermissions.microphone}
+              screenshotFormat="image/jpeg"
+              videoConstraints={{
+                width: { min: 640, ideal: 740, max: 1920 },
+                height: { min: 360, ideal: 416, max: 1080 },
+                deviceId: selectedMediaDevices.video,
+              }}
+              onUserMedia={(e) => console.log("webcam track", e.getTracks())}
+              ref={(e) => {
+                videoRef.current = e?.video;
+                webcamRef.current = e;
+              }}
+            />
+          ) : (
+            <video ref={videoRef} />
+          )}
           {!stopDetection && <canvas ref={canvasRef} id="video-canvas" />}
           {((!modelLoaded && !stopDetection) ||
             (!stopDetection && imgFullDesc && imgFullDesc.length < 1)) && (

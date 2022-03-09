@@ -58,7 +58,7 @@ const MeetingRoomFooter = () => {
                 }),
               };
 
-        const video_stream: MediaStream =
+        const localStream: MediaStream =
           await navigator.mediaDevices.getUserMedia({
             video,
             audio:
@@ -66,8 +66,26 @@ const MeetingRoomFooter = () => {
                 ? !permission.microphone && true
                 : permission.microphone,
           });
-        localStreamRef.current = video_stream;
-        localVideoRef.current.srcObject = video_stream;
+        if (
+          (!permission.camera && permissionType === "cam") ||
+          (permissionType === "mic" && permission.camera)
+        ) {
+          try {
+            const videoStream = await navigator.mediaDevices.getUserMedia({
+              video: { deviceId: selectedMediaDevices.video },
+            });
+
+            console.log(videoStream.getTracks(), localStream.getTracks());
+
+            localStream.removeTrack(localStream.getVideoTracks()[0]);
+            localStream.addTrack(videoStream.getTracks()[0]);
+          } catch (error) {
+            console.log("inner video", error);
+          }
+        }
+
+        localStreamRef.current = localStream;
+        localVideoRef.current.srcObject = localStream;
         localVideoRef.current.muted = true;
         setPermission({
           ...permission,

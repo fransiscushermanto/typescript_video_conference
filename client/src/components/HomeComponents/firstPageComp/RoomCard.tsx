@@ -6,7 +6,7 @@ import KebabMenuSVG from "../../../assets/kebab-menu.svg";
 import * as Popover from "@radix-ui/react-popover";
 import { useDeleteRoom } from "./../../api-hooks/mutation";
 import useMe from "./../../../hooks/use-me";
-import { useGetRole } from "../../../hooks";
+import { useGetRole, useSocket } from "../../../hooks";
 import {
   getInitialFromString,
   hashCode,
@@ -96,6 +96,7 @@ const styled = {
 };
 
 function RoomCard({ room }: IRoomCard) {
+  const socket = useSocket();
   const { room_name, room_id, status } = room;
   const [me] = useMe();
   const history = useHistory();
@@ -112,6 +113,7 @@ function RoomCard({ room }: IRoomCard) {
         action: (e) => {
           e.stopPropagation();
           setIsOpen(false);
+          socket.emit("LEAVE_ROOM", { room_id, me });
           mutateDeleteRoom({ room_id, user_id: me.user_id });
         },
       },

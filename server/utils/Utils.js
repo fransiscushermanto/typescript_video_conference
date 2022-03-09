@@ -5,9 +5,10 @@ const ParticipantType = require("./types");
 const socket = require("../../index").io;
 const helper = require("./helper");
 const excelJS = require("exceljs");
-const produce = require("immer").produce;
+const { HOST } = require("./types");
 
 const user_sockets = {};
+const rooms = {};
 
 /**
  *
@@ -49,22 +50,35 @@ const createRoom = async ({ room_host, room_name }) => {
 };
 
 const validateJoiningRoom = async (user_id, room_id, room_password) => {
-  if (await admin.validateRoomPassword(room_id, room_password)) {
-    await admin.joinRoom(room_id, {
-      user_id,
-      status: ParticipantType.PARTICIPANT,
-    });
+  try {
+    if (await admin.validateRoomPassword(room_id, room_password)) {
+      const user_rooms = await admin.getUserRooms(user_id);
 
-    const room = await admin.getRoom(room_id);
+      if (!user_rooms.some((room) => room.room_id === room_id)) {
+        await admin.joinRoom(room_id, {
+          user_id,
+          status: ParticipantType.PARTICIPANT,
+        });
+      }
 
-    console.log("send notif");
-    socket
-      .to(room_id)
-      .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "add", room });
-    return true;
+      const room = await admin.getRoom(room_id);
+
+      const host_user_id = rooms[room_id]?.find(
+        (participant) => participant.role === HOST,
+      )?.user_id;
+
+      if (host_user_id) {
+        socket
+          .to(user_sockets[host_user_id])
+          .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "add", room });
+      }
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.log(error);
   }
-
-  return false;
 };
 
 const getRoom = async (room_id) => {
@@ -132,16 +146,26 @@ const updateUsersInWaitingRoom = async (room_id, user_id, action) => {
     type: action === "reject" ? "delete" : "update",
     debug: user_sockets,
   });
-  socket.in(room_id).emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", {
-    type: action === "reject" ? "delete" : "update",
-  });
+
+  const host_user_id = rooms[room_id].find(
+    (participant) => participant.role === HOST,
+  ).user_id;
+
+  socket
+    .to(user_sockets[host_user_id])
+    .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", {
+      type: action === "reject" ? "delete" : "update",
+    });
   return;
 };
 
 async function deleteRoom(room_id, user_id) {
   const res = await admin.deleteRoom(room_id, user_id);
+  const host_user_id = rooms[room_id].find(
+    (participant) => participant.role === HOST,
+  ).user_id;
   socket
-    .to(room_id)
+    .to(user_sockets[host_user_id])
     .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "delete" });
   socket.emit("UPDATE_USER_ROOMS", { type: "delete" });
   socket.leave(room_id);
@@ -366,6 +390,7 @@ module.exports = {
   getRoomMeetings,
   getRoomNotifications,
   user_sockets,
+  rooms,
   checkMeeting,
   storeRoomUserFace,
   getRoomUserFaces,
