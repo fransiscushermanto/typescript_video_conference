@@ -219,7 +219,7 @@ function RegisterFaceModal({ onClose }: Props) {
   } = useGetRoomParticipantFaces({ enabled: isModelReady });
   const { videoDevices, refetchUserMedia } = useMediaDevices();
   const [selectedVideoDevices, setSelectedVideoDevices] = useState<string>();
-  const [localSavedImage, setLocalSavedImage] = useState(savedImage);
+  const [localSavedImage, setLocalSavedImage] = useState<any[]>([]);
   const [imgPreview, setImagePreview] = useState<string>();
   const [imgFaceDescriptor, setImgFaceDesctiptor] = useState<Float32Array>();
   const [allowedCamera, setAllowedCamera] = useState<boolean>();
@@ -326,7 +326,7 @@ function RegisterFaceModal({ onClose }: Props) {
       preview_image: url,
     });
 
-    refetchGetParticipantFace();
+    setLocalSavedImage((prev) => [...prev, url]);
     videoRef.current.play();
   }, [
     firebase,
@@ -334,13 +334,14 @@ function RegisterFaceModal({ onClose }: Props) {
     imgPreview,
     me.user_id,
     mutateAsync,
-    refetchGetParticipantFace,
     room_id,
   ]);
 
   useEffect(() => {
-    setLocalSavedImage(savedImage);
-  }, [savedImage]);
+    if (savedImage?.length > 0 && localSavedImage.length === 0) {
+      setLocalSavedImage(savedImage.map((image) => image.preview_image));
+    }
+  }, [localSavedImage.length, savedImage]);
 
   useEffect(() => {
     let interval;
