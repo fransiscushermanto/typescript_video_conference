@@ -105,8 +105,8 @@ interface ContextType {
 }
 
 export const videoConstraints = {
-  width: { min: 640, ideal: 960, max: 1920 },
-  height: { min: 576, ideal: 720, max: 1080 },
+  width: { ideal: 960 },
+  height: { ideal: 720 },
 };
 
 const MeetingRoomContext = React.createContext<ContextType>({
