@@ -20,9 +20,7 @@ const SocketProvider: React.FC<Props> = ({ children }) => {
   >([]);
 
   useEffect(() => {
-    if (Notification.permission !== "denied") {
-      Notification.requestPermission();
-    }
+    Notification.requestPermission();
 
     socket?.on("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", ({ type, room }) => {
       if (type === "add") {
