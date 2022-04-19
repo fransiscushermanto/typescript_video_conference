@@ -14,7 +14,7 @@ export const menus = [
   },
   {
     name: "participants",
-    label: "Pariticipants",
+    label: "Members",
     sidebar: true,
   },
   {

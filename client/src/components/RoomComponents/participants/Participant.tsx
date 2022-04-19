@@ -18,6 +18,11 @@ const styled = {
   `,
 };
 
+const roleLabel = {
+  host: "Host",
+  participant: "Member",
+};
+
 function Participant() {
   const [me] = useMe();
   const { participants } = useGetRoomParticipants();
@@ -35,8 +40,9 @@ function Participant() {
             <React.Fragment key={role}>
               <div className="role-title">
                 <span>
-                  {role.substring(0, 1).toUpperCase()}
-                  {role.substring(1, role.length)} ({participants.length})
+                  {roleLabel[role].substring(0, 1).toUpperCase()}
+                  {roleLabel[role].substring(1, roleLabel[role].length)} (
+                  {participants.length})
                 </span>
               </div>
               {participants.map((participant) => (
