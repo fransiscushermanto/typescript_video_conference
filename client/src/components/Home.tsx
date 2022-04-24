@@ -57,30 +57,31 @@ const Home: React.FC<Props> = ({ history }) => {
   const [me] = useMe();
   const [messages, setMessages] = useContext(MessageContext);
   const [currentPage, setCurrentPage] = useState<HomePages>(HomePages.DEFAULT);
-  const { mutateAsync: mutateAsyncCreateRoom } = useCreateRoom({
-    onSuccess: ({ message }) => {
-      setMessages([
-        ...messages,
-        {
-          id: Date.now(),
-          message: message,
-          severity: Severities.SUCCESS,
-        },
-      ]);
-      setCurrentPage(HomePages.DEFAULT);
-    },
-    onError: (error) => {
-      const { message } = error.response.data;
-      setMessages([
-        ...messages,
-        {
-          id: Date.now(),
-          message: message,
-          severity: Severities.ERROR,
-        },
-      ]);
-    },
-  });
+  const { mutateAsync: mutateAsyncCreateRoom, isLoading: isLoadingCreateRoom } =
+    useCreateRoom({
+      onSuccess: ({ message }) => {
+        setMessages([
+          ...messages,
+          {
+            id: Date.now(),
+            message: message,
+            severity: Severities.SUCCESS,
+          },
+        ]);
+        setCurrentPage(HomePages.DEFAULT);
+      },
+      onError: (error) => {
+        const { message } = error.response.data;
+        setMessages([
+          ...messages,
+          {
+            id: Date.now(),
+            message: message,
+            severity: Severities.ERROR,
+          },
+        ]);
+      },
+    });
 
   const formContext = useForm({
     resolver: yupResolver(
@@ -102,10 +103,12 @@ const Home: React.FC<Props> = ({ history }) => {
   }): Promise<void> => {
     switch (currentPage) {
       case HomePages.CREATE:
-        await mutateAsyncCreateRoom({
-          room_name: formData.room_name,
-          user_id: me.user_id,
-        });
+        if (!isLoadingCreateRoom) {
+          await mutateAsyncCreateRoom({
+            room_name: formData.room_name,
+            user_id: me.user_id,
+          });
+        }
         break;
       case HomePages.JOIN:
         setCurrentPage(HomePages.DEFAULT);

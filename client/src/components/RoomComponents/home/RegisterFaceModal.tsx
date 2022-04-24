@@ -441,7 +441,12 @@ function RegisterFaceModal({ onClose }: Props) {
                 </option>
               ))}
             </select>
-
+            <div>
+              <span>
+                Please make sure your face is <b>clearly visible</b> and{" "}
+                <b>only one face in one frame</b> before you register your face.
+              </span>
+            </div>
             <button
               className="btn btn-primary btn-block mt-1 btn-save"
               onClick={onSave}

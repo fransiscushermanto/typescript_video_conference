@@ -159,7 +159,7 @@ export function useGetRoomParticipants(
     { participants: Participant[] },
     any
   >(
-    "room-participants",
+    ["room-participants", room_id],
     async () => {
       const res = await axios.get(`/rooms/${room_id}/participants`, {
         params: {
