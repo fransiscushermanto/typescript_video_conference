@@ -22,23 +22,23 @@ const JoinPage: React.FC<Props> = ({
 }) => {
   const socket = useSocket();
   const [me] = useMe();
-  const [messages, setMessages] = useContext(MessageContext);
+  const [, setMessages] = useContext(MessageContext);
   const { getValues } = useFormContext();
 
   const { mutateAsync: mutateAsyncCheckRoom } = useCheckRoom({
     onSuccess: async () => {
       var password = prompt("Please enter room password");
       if (password !== null) {
-        await mutateAsyncJoinRoom({
+        mutateJoinRoom({
           room_id: getValues().room_id,
           room_password: password,
           user_id: me.user_id,
         });
       }
     },
-    onError: ({ response: { data } }) => {
-      setMessages([
-        ...messages,
+    onError: ({ response: { data, status } }) => {
+      setMessages((prev) => [
+        ...prev,
         {
           id: Date.now(),
           message: data?.message,
@@ -48,14 +48,14 @@ const JoinPage: React.FC<Props> = ({
     },
   });
 
-  const { mutateAsync: mutateAsyncJoinRoom } = useJoinRoom({
+  const { mutate: mutateJoinRoom } = useJoinRoom({
     onSuccess: () => {
       socket.emit("JOIN_ROOM", { room_id: getValues().room_id, me });
       onSubmit(getValues());
     },
     onError: ({ response: { data } }) => {
-      setMessages([
-        ...messages,
+      setMessages((prev) => [
+        ...prev,
         {
           id: Date.now(),
           message: data.message,
