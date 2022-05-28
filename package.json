@@ -32,8 +32,6 @@
     "immer": "^9.0.7",
     "path": "^0.12.7",
     "peer": "^0.6.1",
-    "react-google-login": "^5.2.2",
-    "react-webcam": "^6.0.1",
     "socket.io": "^4.4.1",
     "uuid": "^8.3.2"
   },
