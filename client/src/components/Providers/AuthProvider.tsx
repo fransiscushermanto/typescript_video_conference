@@ -4,6 +4,7 @@ import { useHistory } from "react-router-dom";
 import Cookies from "js-cookie";
 import { QueryClient } from "react-query";
 import { UserModel } from "../api-hooks/type";
+import useFaceRecognition from "./../../hooks/use-face-recognition";
 
 interface Props {
   children: React.ReactNode;
@@ -29,6 +30,7 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
   const history = useHistory();
 
   const socket = useSocket();
+  const { initModels } = useFaceRecognition();
   const [me, setMe] = useState<UserModel>();
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(
     !!Cookies.get("Authorization"),
@@ -68,6 +70,7 @@ const AuthProvider: React.FC<Props> = ({ children }) => {
         };
         setMe(data);
         socket.emit("LIST_USER_SOCKET", { me: data });
+        initModels();
         setIsLoggedIn(true);
       } else {
         history.push("/");
