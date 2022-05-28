@@ -18,13 +18,14 @@ export default function useFaceRecognition() {
     try {
       console.log("initializing models");
 
-      await faceapi.loadSsdMobilenetv1Model(MODEL_URL);
+      await Promise.all([
+        faceapi.loadSsdMobilenetv1Model(MODEL_URL),
+        faceapi.loadFaceLandmarkTinyModel(MODEL_URL),
+        faceapi.loadFaceRecognitionModel(MODEL_URL),
+      ]);
+
       setIsLoadingFaceDetector(false);
-
-      await faceapi.loadFaceLandmarkTinyModel(MODEL_URL);
       setIs68FacialLandmarkLoading(false);
-
-      await faceapi.loadFaceRecognitionModel(MODEL_URL);
       setIsFeatureExtractorLoading(false);
 
       console.log("done initializing models");
