@@ -54,7 +54,7 @@ const validateJoiningRoom = async (user_id, room_id, room_password) => {
     if (await admin.validateRoomPassword(room_id, room_password)) {
       const user_rooms = await admin.getUserRooms(user_id);
 
-      if (!user_rooms.some((room) => room.room_id === room_id)) {
+      if (!user_rooms?.some((room) => room.room_id === room_id)) {
         await admin.joinRoom(room_id, {
           user_id,
           status: ParticipantType.PARTICIPANT,
