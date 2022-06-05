@@ -29,7 +29,9 @@ const styled = {
 function WaitingRoom() {
   const { room_id } = useParams<{ room_id; menu }>();
 
-  const { usersInWaitingRoom } = useGetUsersInWaitingRoom(room_id);
+  const { usersInWaitingRoom } = useGetUsersInWaitingRoom(room_id, {
+    enabled: true,
+  });
   const { mutateAsync } = useUpdateUsersInWaitingRoom();
 
   return (
