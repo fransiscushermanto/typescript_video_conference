@@ -104,38 +104,42 @@ export function pushNotification(
     icon: Icon,
   },
 ) {
-  const { link, ...resOptions } = options;
+  try {
+    const { link, ...resOptions } = options;
 
-  const title = "Video Room";
-  // Let's check if the browser supports notifications
-  if (!("Notification" in window)) {
-    return;
+    const title = "Video Room";
+    // Let's check if the browser supports notifications
+    if (!("Notification" in window)) {
+      return;
+    }
+
+    // Let's check whether notification permissions have already been granted
+    else if (Notification.permission === "granted") {
+      // If it's okay let's create a notification
+      const notification = new Notification(title, resOptions);
+      notification.addEventListener("click", () => {
+        window.open(link, "_blank");
+      });
+    }
+
+    // Otherwise, we need to ask the user for permission
+    else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(function (permission) {
+        // If the user accepts, let's create a notification
+        if (permission === "granted") {
+          const notification = new Notification(title, resOptions);
+          notification.addEventListener("click", () => {
+            window.open(link, "_blank");
+          });
+        }
+      });
+    }
+
+    // At last, if the user has denied notifications, and you
+    // want to be respectful there is no need to bother them any more.
+  } catch (error) {
+    console.log("pushNotif Error", error);
   }
-
-  // Let's check whether notification permissions have already been granted
-  else if (Notification.permission === "granted") {
-    // If it's okay let's create a notification
-    const notification = new Notification(title, resOptions);
-    notification.addEventListener("click", () => {
-      window.open(link, "_blank");
-    });
-  }
-
-  // Otherwise, we need to ask the user for permission
-  else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(function (permission) {
-      // If the user accepts, let's create a notification
-      if (permission === "granted") {
-        const notification = new Notification(title, resOptions);
-        notification.addEventListener("click", () => {
-          window.open(link, "_blank");
-        });
-      }
-    });
-  }
-
-  // At last, if the user has denied notifications, and you
-  // want to be respectful there is no need to bother them any more.
 }
 
 export function numberFromText(text) {

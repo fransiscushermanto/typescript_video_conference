@@ -161,17 +161,21 @@ const updateUsersInWaitingRoom = async (room_id, user_id, action) => {
 
 async function deleteRoom(room_id, user_id) {
   try {
+    const room = await admin.getRoom(room_id);
     const res = await admin.deleteRoom(room_id, user_id);
     if (rooms[room_id]) {
       const host_user_id = rooms[room_id]?.find(
         (participant) => participant.role === HOST,
-      ).user_id;
+      )?.user_id;
+      console.log("deleteRoom", user_sockets, host_user_id);
       socket
         .to(user_sockets[host_user_id])
-        .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "delete" });
+        .emit("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", { type: "delete", room });
     }
     socket.emit("UPDATE_USER_ROOMS", { type: "delete" });
-    socket.leave(room_id);
+    if (socket.sockets.adapter.rooms[room_id]) {
+      socket.leave(room_id);
+    }
     return res;
   } catch (error) {
     console.log("error", error);

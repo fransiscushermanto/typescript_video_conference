@@ -84,8 +84,7 @@ export function useGetRooms(
     rooms?.forEach(({ room_id }) => {
       socket?.emit("JOIN_ROOM", { room_id, me });
     });
-  }, [rooms, me]);
-
+  }, [rooms, me, socket]);
   useEffect(() => {
     socket?.on("UPDATE_USER_ROOMS", refetch);
 
@@ -232,7 +231,7 @@ export function useGetRoomNotification(
     { notifications: RoomNotificationModel },
     any
   >(
-    "room_notifications",
+    ["room_notifications", room_id],
     async () => {
       const res = await axios.get(
         `/notifications/${me?.user_id}/rooms/${room_id}`,

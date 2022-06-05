@@ -39,7 +39,6 @@ module.exports = function (socket, io) {
         ];
       }
     }
-
     socket.join(room_id);
   });
 

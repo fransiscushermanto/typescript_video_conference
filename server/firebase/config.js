@@ -67,6 +67,8 @@ class FirebaseAdmin {
   }
 
   async getUserNotifications(user_id) {
+    if (!user_id) return {};
+
     const room_data = await this.firestore
       .collection(collections.notifications)
       .doc(user_id)
@@ -180,21 +182,23 @@ class FirebaseAdmin {
   }
 
   async updateRoomNotification(user_id, room_id, payload) {
-    const user_notif = this.getUserNotifications(user_id);
-    const room_notif = this.getRoomNotifications(user_id, room_id);
-    await this.firestore
-      .collection(collections.notifications)
-      .doc(user_id)
-      .update({
-        ...user_notif,
-        rooms: {
-          ...user_notif.rooms,
-          [room_id]: {
-            ...room_notif,
-            ...payload,
+    if (user_id) {
+      const user_notif = await this.getUserNotifications(user_id);
+      const room_notif = await this.getRoomNotifications(user_id, room_id);
+      await this.firestore
+        .collection(collections.notifications)
+        .doc(user_id)
+        .update({
+          ...user_notif,
+          rooms: {
+            ...user_notif.rooms,
+            [room_id]: {
+              ...room_notif,
+              ...payload,
+            },
           },
-        },
-      });
+        });
+    }
   }
 
   /**
@@ -268,6 +272,13 @@ class FirebaseAdmin {
   async validateRoomPassword(room_id, room_password) {
     if (room_id && room_password) {
       const res = await this.getRoom(room_id);
+      console.log(
+        "room_password",
+        res.room_password,
+        "attemp password",
+        room_password,
+        String(res.room_password) === String(room_password),
+      );
       return String(res.room_password) === String(room_password);
     }
     return false;

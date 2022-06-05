@@ -59,22 +59,11 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
   const { room_id } = useParams<{ room_id }>();
   const { url } = useRouteMatch();
   const { role: myRole } = useGetRole();
-  const room = useGetRoom(room_id);
 
   const { roomNotifications } = useGetRoomNotification({
     enabled: !!me?.user_id,
     refetchOnWindowFocus: false,
   });
-
-  const { usersInWaitingRoom } = useGetUsersInWaitingRoom(room_id, {
-    enabled: true,
-    refetchOnWindowFocus: false,
-  });
-
-  const notifOnDelete = React.useMemo(
-    () => usersInWaitingRoom.length === 0 && { "waiting-room": false },
-    [usersInWaitingRoom],
-  );
 
   const currentMenuNotif = roomNotifications[activeMenu];
   const isRoleAllowedToReceiveNotification = React.useCallback(
@@ -95,34 +84,6 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
     }
   }, [activeMenu, socket, currentMenuNotif, room_id, activeMenu]);
 
-  useEffect(() => {
-    socket?.on("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", ({ type }) => {
-      if (
-        isRoleAllowedToReceiveNotification("waiting-room") &&
-        room.room_name
-      ) {
-        if (type === "add") {
-          socket?.emit("UPDATE_ROOM_NOTIFICATION", {
-            user_id: me?.user_id,
-            room_id,
-            notif: { "waiting-room": true },
-          });
-        } else if (type === "delete") {
-          socket?.emit("UPDATE_ROOM_NOTIFICATION", {
-            user_id: me?.user_id,
-            room_id,
-            notif: {
-              ...notifOnDelete,
-            },
-          });
-        }
-      }
-    });
-    return () => {
-      socket?.off("UPDATE_PARTICIPANTS_IN_WAITING_ROOM", () => {});
-    };
-  }, [myRole, room]);
-
   if (!menus.find((menu) => menu.name === activeMenu).sidebar) return null;
 
   return (
@@ -138,6 +99,7 @@ function SidebarRoom({ activeMenu }: { activeMenu: string }) {
           .filter((menu) => menu.sidebar)
           .map(({ label, name, role }, i) => {
             if (role && !role?.includes(myRole)) return null;
+
             return (
               <div
                 key={i}

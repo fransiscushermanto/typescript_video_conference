@@ -12,7 +12,7 @@ const styled = {
   root: css`
     width: 100%;
     max-width: 100%;
-    height: calc(100% - 70px);
+    height: calc(100% - 110px);
     display: flex;
     flex-direction: column;
     padding: 0 2.5rem;
@@ -66,8 +66,8 @@ function FirstPage(props: Props) {
         </div>
       </div>
       <div className={styled.roomWrapper}>
-        {rooms?.map((room, i) => (
-          <RoomCard key={i} room={room} />
+        {rooms?.map((room) => (
+          <RoomCard key={room.room_id} room={room} />
         ))}
       </div>
     </div>
