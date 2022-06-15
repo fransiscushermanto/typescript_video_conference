@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import VideoSVG from "../../../assets/video-call.svg";
 import NoVideoSVG from "../../../assets/no-video-call.svg";
 import MicrophoneSVG from "../../../assets/microphone.svg";
@@ -11,12 +11,13 @@ import {
   MeetingRoomPermissionModel,
 } from "../../Providers/MeetingRoomProvider";
 import { generateEmptyMediaTrack } from "../../helper";
-import { useHistory } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 
 const emptyMediaTrack = generateEmptyMediaTrack();
 
 const MeetingRoomFooter = () => {
   const history = useHistory();
+  const { room_id } = useParams<{ room_id }>();
   const [messages, setMessages] = React.useContext(MessageContext);
   const roomSocket = useRoomSocket();
   const {
@@ -155,7 +156,10 @@ const MeetingRoomFooter = () => {
         </div>
       </div>
       <div className="btn-leave-wrapper">
-        <button className="btn-leave" onClick={() => history.goBack()}>
+        <button
+          className="btn-leave"
+          onClick={() => history.push(`/room/${room_id}`)}
+        >
           Leave
         </button>
       </div>
