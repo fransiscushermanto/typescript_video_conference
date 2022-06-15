@@ -43,6 +43,7 @@ const styled = {
     justify-content: center;
     align-items: center;
 
+    color: white;
     background-color: ${bg};
 
     clip-path: circle();
